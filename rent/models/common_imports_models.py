@@ -65,6 +65,8 @@ class UnitType(models.TextChoices):
     """
     SHOWROOM = 'showroom', _('معرض')
     WORKSHOP = 'workshop', _('ورشه')
+    OFIEC = 'ofiec', _('مكتب')
+    STATION = 'station', _('محطة محروقات')
 
 
 

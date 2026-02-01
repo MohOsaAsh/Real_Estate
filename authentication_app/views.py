@@ -16,17 +16,26 @@ class UserRegistrationView(CreateView):
     form_class = UserRegistrationForm
     template_name = 'authentication/register.html'
     success_url = reverse_lazy('auth_app:login')
-    
+
+    def dispatch(self, request, *args, **kwargs):
+        # السماح للمشرفين بإضافة مستخدمين جدد
+        if request.user.is_authenticated and not request.user.is_superuser:
+            return redirect('rent:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        # إذا كان المستخدم مشرف، إعادة توجيهه لقائمة المستخدمين
+        if self.request.user.is_authenticated and self.request.user.is_superuser:
+            return reverse_lazy('auth_app:user-list')
+        return reverse_lazy('auth_app:login')
+
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, 'تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.')
+        if self.request.user.is_authenticated and self.request.user.is_superuser:
+            messages.success(self.request, 'تم إنشاء المستخدم بنجاح!')
+        else:
+            messages.success(self.request, 'تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.')
         return response
-    
-    def dispatch(self, request, *args, **kwargs):
-        # إذا كان المستخدم مسجل دخول بالفعل، إعادة توجيهه للداشبورد
-        if request.user.is_authenticated:
-            return redirect('rent:dashboard')  # ✅ تعديل هنا
-        return super().dispatch(request, *args, **kwargs)
 
 
 # ============ تسجيل الدخول ============

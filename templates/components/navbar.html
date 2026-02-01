@@ -35,13 +35,13 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li>
-                            <a class="dropdown-item" href="#">
+                            <a class="dropdown-item" href="{% url 'auth_app:user-detail' user.pk %}">
                                 <i class="fas fa-user-cog me-2"></i>
                                 الملف الشخصي
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="#">
+                            <a class="dropdown-item" href="{% url 'auth_app:user-update' user.pk %}">
                                 <i class="fas fa-cog me-2"></i>
                                 الإعدادات
                             </a>
