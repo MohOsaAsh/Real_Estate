@@ -1,0 +1,27 @@
+     /* static/css/receipts.css */
+
+     /* Receipts Styles */
+.receipt-card {
+    border-right: 4px solid #198754;
+}
+
+.receipt-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #198754;
+}
+
+.receipt-status.posted {
+    background: linear-gradient(135deg, #198754, #146c43);
+}
+
+.receipt-status.draft {
+    background: linear-gradient(135deg, #6c757d, #565e64);
+}
+
+@media print {
+    .btn, .card-header, .sidebar, .navbar {
+        display: none !important;
+    }
+}
+

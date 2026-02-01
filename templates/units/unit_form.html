@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}تعديل الوحدة{% else %}وحدة جديدة{% endif %}{% endblock %}
+
+{% block page_title %}{% if object %}تعديل الوحدة - {{ object.unit_number }}{% else %}إضافة وحدة جديدة{% endif %}
+{%endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-home"></i>
+                    {% if object %}تعديل بيانات الوحدة{% else %}معلومات الوحدة الجديدة{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <!-- معلومات الموقع -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-map-marker-alt"></i> معلومات الموقع
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.building.id_for_label }}" class="form-label">
+                                    المبنى <span class="text-danger">*</span>
+                                </label>
+                                {{ form.building }}
+                                {% if form.building.errors %}
+                                <div class="invalid-feedback d-block">{{ form.building.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-3">
+                                <label for="{{ form.unit_type.id_for_label }}" class="form-label">
+                                    نوع الوحدة <span class="text-danger">*</span>
+                                </label>
+                                {{ form.unit_type }}
+                                {% if form.unit_type.errors %}
+                                <div class="invalid-feedback d-block">{{ form.unit_type.errors }}</div>
+                                {% endif %}
+                            </div>
+
+
+                            <div class="col-md-3">
+                                <label for="{{ form.unit_number.id_for_label }}" class="form-label">
+                                    رقم الوحدة <span class="text-danger">*</span>
+                                </label>
+                                {{ form.unit_number }}
+                                {% if form.unit_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.unit_number.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="{{ form.floor.id_for_label }}" class="form-label">
+                                    الطابق <span class="text-danger">*</span>
+                                </label>
+                                {{ form.floor }}
+                                {% if form.floor.errors %}
+                                <div class="invalid-feedback d-block">{{ form.floor.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المواصفات -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-ruler-combined"></i> المواصفات
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.area.id_for_label }}" class="form-label">
+                                    المساحة (م²) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.area }}
+                                {% if form.area.errors %}
+                                <div class="invalid-feedback d-block">{{ form.area.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="{{ form.rooms_count.id_for_label }}" class="form-label">
+                                    عدد الغرف <span class="text-danger">*</span>
+                                </label>
+                                {{ form.rooms_count }}
+                                {% if form.rooms_count.errors %}
+                                <div class="invalid-feedback d-block">{{ form.rooms_count.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="{{ form.bathrooms_count.id_for_label }}" class="form-label">
+                                    عدد الحمامات <span class="text-danger">*</span>
+                                </label>
+                                {{ form.bathrooms_count }}
+                                {% if form.bathrooms_count.errors %}
+                                <div class="invalid-feedback d-block">{{ form.bathrooms_count.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- العدادات -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-tachometer-alt"></i> العدادات
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.water_meter_number.id_for_label }}" class="form-label">
+                                    رقم عداد المياه
+                                </label>
+                                {{ form.water_meter_number }}
+                                {% if form.water_meter_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.water_meter_number.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="{{ form.electricity_meter_number.id_for_label }}" class="form-label">
+                                    رقم عداد الكهرباء
+                                </label>
+                                {{ form.electricity_meter_number }}
+                                {% if form.electricity_meter_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.electricity_meter_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الحالة -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-info-circle"></i> حالة الوحدة
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    الحالة <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ملاحظات -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-sticky-note"></i> ملاحظات
+                        </h6>
+                        <div class="row">
+                            <div class="col-12">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                    ملاحظات إضافية
+                                </label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نشط -->
+                    <div class="form-section mb-4">
+                        <div class="form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                الوحدة نشطة
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rent:unit_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            {% if object %}حفظ التعديلات{% else %}حفظ{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/units.css' %}" rel="stylesheet">
+<style>
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+
+    .section-title {
+        color: #0d6efd;
+        font-weight: 600;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/units.js' %}"></script>
+{% endblock %}

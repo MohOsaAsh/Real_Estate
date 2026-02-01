@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-3"><i class="fas fa-trash-alt"></i> حذف المستأجر</h3>
+
+    <div class="alert alert-warning">
+        <p>هل أنت متأكد من رغبتك في حذف المستأجر التالي؟</p>
+        <ul>
+            <li><strong>الاسم:</strong> {{ object.name }}</li>
+            <li><strong>نوع المستأجر:</strong> {{ object.get_tenant_type_display }}</li>
+            <li><strong>الهاتف:</strong> {{ object.phone }}</li>
+            <li><strong>البريد الإلكتروني:</strong> {{ object.email }}</li>
+        </ul>
+        <p>ملاحظة: هذا حذف <strong>ناعم</strong>؛ سيتم فقط تعطيل المستأجر.</p>
+    </div>
+
+    {% if active_contracts %}
+        <div class="alert alert-danger">
+            <strong>تنبيه!</strong> لا يمكن حذف المستأجر لأنه لديه عقود نشطة:
+            <ul>
+                {% for contract in active_contracts %}
+                    <li>{{ contract.name }} - {{ contract.start_date }} إلى {{ contract.end_date }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="{% url 'rent:tenant_detail' object.pk %}" class="btn btn-secondary">العودة للتفاصيل</a>
+    {% else %}
+        <form method="post">
+            {% csrf_token %}
+            <a href="{% url 'rent:tenant_detail' object.pk %}" class="btn btn-secondary">
+                إلغاء
+            </a>
+            <button type="submit" class="btn btn-danger">
+                تأكيد الحذف
+            </button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

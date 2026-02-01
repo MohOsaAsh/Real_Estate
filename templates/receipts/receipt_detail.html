@@ -1,0 +1,607 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}سند قبض {{ receipt.receipt_number }}{% endblock %}
+
+{% block page_title %}
+<div class="d-flex align-items-center">
+    <i class="fas fa-receipt text-primary me-2"></i>
+    سند قبض {{ receipt.receipt_number }}
+    {% if receipt.status == 'draft' %}
+    <span class="badge bg-warning me-2">مسودة</span>
+    {% elif receipt.status == 'posted' %}
+    <span class="badge bg-success me-2">مرحل</span>
+    {% elif receipt.status == 'cancelled' %}
+    <span class="badge bg-danger me-2">ملغي</span>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'rent:receipt_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i> رجوع
+    </a>
+
+    {% if receipt.status == 'draft' and perms.rent.change_receipt %}
+    <a href="{% url 'rent:receipt_update' receipt.pk %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> تعديل
+    </a>
+    {% endif %}
+
+    {% if receipt.status == 'draft' and perms.rent.post_receipt %}
+    <form method="post" action="{% url 'rent:receipt_post' receipt.pk %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success" onclick="return confirm('هل أنت متأكد من ترحيل هذا السند؟')">
+            <i class="fas fa-check"></i> ترحيل
+        </button>
+    </form>
+    {% endif %}
+
+    {% if perms.rent.print_receipt %}
+    <a href="{% url 'rent:receipt_print' receipt.pk %}" class="btn btn-info" target="_blank">
+        <i class="fas fa-print"></i> طباعة
+    </a>
+    {% endif %}
+    {% if perms.rent.export_receipt_pdf %}
+    <div class="btn-group" role="group">
+        <a href="{% url 'rent:receipt_pdf' receipt.pk %}" class="btn btn-outline-danger" target="_blank"
+            title="عرض السند">
+            <i class="fas fa-eye"></i> عرض
+        </a>
+        <a href="{% url 'rent:receipt_pdf' receipt.pk %}?download=true" class="btn btn-danger"
+            title="حفظ السند على الجهاز">
+            <i class="fas fa-download"></i> حفظ PDF
+        </a>
+        <button type="button" class="btn btn-outline-dark" onclick="shareReceipt()" title="مشاركة رابط السند">
+            <i class="fas fa-share-alt"></i> مشاركة
+        </button>
+    </div>
+    {% endif %}
+
+    {% if receipt.status == 'posted' and perms.rent.cancel_receipt %}
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+        <i class="fas fa-ban"></i> إلغاء
+    </button>
+    {% endif %}
+
+    {% if receipt.status == 'draft' and perms.rent.delete_receipt %}
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+        <i class="fas fa-trash"></i> حذف
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Receipt Information Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle text-primary"></i> معلومات السند
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-primary">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">رقم السند</small>
+                                <h6 class="mb-0">{{ receipt.receipt_number }}</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-info">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">تاريخ السند</small>
+                                <h6 class="mb-0">{{ receipt.receipt_date|date:"Y/m/d" }}</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-success">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">المبلغ</small>
+                                <h6 class="mb-0">{{ receipt.amount|floatformat:2 }} ريال</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-warning">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">طريقة الدفع</small>
+                                <h6 class="mb-0">{{ receipt.get_payment_method_display }}</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if receipt.reference_number %}
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-secondary">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">رقم المرجع</small>
+                                <h6 class="mb-0">{{ receipt.reference_number }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if receipt.check_number %}
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-purple">
+                                <i class="fas fa-money-check"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">رقم الشيك</small>
+                                <h6 class="mb-0">{{ receipt.check_number }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if receipt.bank_name %}
+                    <div class="col-md-12">
+                        <div class="info-box">
+                            <div class="info-icon bg-info">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">اسم البنك</small>
+                                <h6 class="mb-0">{{ receipt.bank_name }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if receipt.payment_proof %}
+                    <div class="col-md-12">
+                        <div class="info-box">
+                            <div class="info-icon bg-success">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">صورة إثبات الدفع</small>
+                                <div class="mt-2">
+                                    {% if receipt.payment_proof.name|lower|slice:"-4:" == ".pdf" %}
+                                    <a href="{{ receipt.payment_proof.url }}" target="_blank"
+                                        class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-file-pdf"></i> عرض ملف PDF
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ receipt.payment_proof.url }}" target="_blank" class="d-block">
+                                        <img src="{{ receipt.payment_proof.url }}" alt="إثبات الدفع"
+                                            class="img-thumbnail" style="max-width: 300px; max-height: 200px;">
+                                    </a>
+                                    <a href="{{ receipt.payment_proof.url }}" target="_blank"
+                                        class="btn btn-sm btn-outline-primary mt-2">
+                                        <i class="fas fa-expand"></i> عرض بالحجم الكامل
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Information Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-contract text-primary"></i> معلومات العقد
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="contract-icon me-3">
+                                <i class="fas fa-file-contract text-primary"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">رقم العقد</small>
+                                <strong>
+                                    <a href="{% url 'rent:contract_detail' receipt.contract.pk %}">
+                                        {{ receipt.contract.contract_number }}
+                                    </a>
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="contract-icon me-3">
+                                <i class="fas fa-user text-success"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">المستأجر</small>
+                                <strong>{{ receipt.contract.tenant.name }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="contract-icon me-3">
+                                <i class="fas fa-home text-info"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">الوحدة</small>
+                                <strong>{{ receipt.contract.unit.unit_number }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="contract-icon me-3">
+                                <i class="fas fa-calendar text-warning"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">فترة العقد</small>
+                                <strong>
+                                    {{ receipt.contract.start_date|date:"Y/m/d" }} -
+                                    {{ receipt.contract.end_date|date:"Y/m/d" }}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Period Card -->
+        {% if receipt.period_start and receipt.period_end %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-check text-primary"></i> فترة الدفع
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="period-box">
+                            <i class="fas fa-calendar-plus text-success"></i>
+                            <small class="text-muted d-block mt-2">بداية الفترة</small>
+                            <strong>{{ receipt.period_start|date:"Y/m/d" }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="period-box">
+                            <i class="fas fa-calendar-minus text-danger"></i>
+                            <small class="text-muted d-block mt-2">نهاية الفترة</small>
+                            <strong>{{ receipt.period_end|date:"Y/m/d" }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="period-box">
+                            <i class="fas fa-clock text-info"></i>
+                            <small class="text-muted d-block mt-2">المدة</small>
+                            <strong>{{ receipt.get_payment_period_months|floatformat:1 }} شهر</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Notes Card -->
+        {% if receipt.notes %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-sticky-note text-primary"></i> الملاحظات
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ receipt.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Audit Trail Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-history text-primary"></i> سجل التعديلات
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-success">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <small class="text-muted">تاريخ الإنشاء</small>
+                            <p class="mb-0"><strong>{{ receipt.created_at|date:"Y/m/d - H:i" }}</strong></p>
+                            {% if receipt.created_by %}
+                            <small class="text-muted">بواسطة: {{ receipt.created_by.get_full_name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if receipt.posted_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-primary">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <small class="text-muted">تاريخ الترحيل</small>
+                            <p class="mb-0"><strong>{{ receipt.posted_at|date:"Y/m/d - H:i" }}</strong></p>
+                            {% if receipt.posted_by %}
+                            <small class="text-muted">بواسطة: {{ receipt.posted_by.get_full_name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if receipt.cancelled_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-danger">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <small class="text-muted">تاريخ الإلغاء</small>
+                            <p class="mb-0"><strong>{{ receipt.cancelled_at|date:"Y/m/d - H:i" }}</strong></p>
+                            {% if receipt.cancelled_by %}
+                            <small class="text-muted">بواسطة: {{ receipt.cancelled_by.get_full_name }}</small>
+                            {% endif %}
+                            {% if receipt.cancellation_reason %}
+                            <p class="mt-2 text-danger"><strong>السبب:</strong> {{ receipt.cancellation_reason }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Status Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center">
+                <div class="status-badge mb-3">
+                    {% if receipt.status == 'draft' %}
+                    <div class="status-icon bg-warning">
+                        <i class="fas fa-file-alt fa-3x"></i>
+                    </div>
+                    <h5 class="text-warning mt-2">مسودة</h5>
+                    {% elif receipt.status == 'posted' %}
+                    <div class="status-icon bg-success">
+                        <i class="fas fa-check-circle fa-3x"></i>
+                    </div>
+                    <h5 class="text-success mt-2">مرحل</h5>
+                    {% elif receipt.status == 'cancelled' %}
+                    <div class="status-icon bg-danger">
+                        <i class="fas fa-ban fa-3x"></i>
+                    </div>
+                    <h5 class="text-danger mt-2">ملغي</h5>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-0">حالة السند الحالية</p>
+            </div>
+        </div>
+
+        <!-- Late Payment Alert -->
+        {% if receipt.is_late_payment %}
+        <div class="card border-0 shadow-sm mb-4 border-danger">
+            <div class="card-body">
+                <div class="alert alert-danger mb-0">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> دفعة متأخرة
+                    </h6>
+                    <p class="mb-2">عدد أيام التأخير: <strong>{{ receipt.get_days_overdue }}</strong> يوم</p>
+                    {% if receipt.calculate_late_fee > 0 %}
+                    <p class="mb-0">غرامة التأخير: <strong>{{ receipt.calculate_late_fee|floatformat:2 }}</strong> ريال
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt text-warning"></i> إجراءات سريعة
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if receipt.status == 'draft' and perms.rent.post_receipt %}
+                    <form method="post" action="{% url 'rent:receipt_post' receipt.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100"
+                            onclick="return confirm('هل أنت متأكد من ترحيل هذا السند؟')">
+                            <i class="fas fa-check"></i> ترحيل السند
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if receipt.status == 'draft' and perms.rent.change_receipt %}
+                    <a href="{% url 'rent:receipt_update' receipt.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> تعديل السند
+                    </a>
+                    {% endif %}
+
+                    {% if perms.rent.print_receipt %}
+                    <a href="{% url 'rent:receipt_print' receipt.pk %}" class="btn btn-info" target="_blank">
+                        <i class="fas fa-print"></i> طباعة السند
+                    </a>
+                    {% endif %}
+                    {% if perms.rent.export_receipt_pdf %}
+                    <a href="{% url 'rent:receipt_pdf' receipt.pk %}" class="btn btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf"></i> تصدير PDF
+                    </a>
+                    {% endif %}
+
+                    <a href="{% url 'rent:contract_detail' receipt.contract.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-file-contract"></i> عرض العقد
+                    </a>
+
+                    {% if receipt.status == 'posted' and perms.rent.cancel_receipt %}
+                    <hr class="my-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                        data-bs-target="#cancelModal">
+                        <i class="fas fa-ban"></i> إلغاء السند
+                    </button>
+                    {% endif %}
+
+                    {% if receipt.status == 'draft' and perms.rent.delete_receipt %}
+                    <hr class="my-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                        data-bs-target="#deleteModal">
+                        <i class="fas fa-trash"></i> حذف السند
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+{% if receipt.status == 'posted' %}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'rent:receipt_cancel' receipt.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelModalLabel">إلغاء سند القبض</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        هل أنت متأكد من إلغاء سند القبض رقم <strong>{{ receipt.receipt_number }}</strong>؟
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">سبب الإلغاء <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required
+                            placeholder="يرجى إدخال سبب الإلغاء"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban"></i> تأكيد الإلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Modal -->
+{% if receipt.status == 'draft' %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'rent:receipt_delete' receipt.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">حذف سند القبض</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        هل أنت متأكد من حذف سند القبض رقم <strong>{{ receipt.receipt_number }}</strong>؟
+                    </div>
+                    <div class="mb-3">
+                        <label for="delete_reason" class="form-label">سبب الحذف (اختياري)</label>
+                        <textarea class="form-control" id="delete_reason" name="delete_reason" rows="3"
+                            placeholder="يرجى إدخال سبب الحذف إن وجد"></textarea>
+                    </div>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        ملاحظة: هذه العملية قابلة للتراجع (حذف مؤقت)
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> تأكيد الحذف
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/receipt_detail.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function shareReceipt() {
+        const url = "{% url 'rent:receipt_pdf' receipt.pk %}";
+        // Construct absolute URL safely
+        const absoluteUrl = window.location.origin + url;
+
+        const shareData = {
+            title: 'سند قبض {{ receipt.receipt_number }}',
+            text: 'سند قبض رقم {{ receipt.receipt_number }} - {{ receipt.contract.tenant.name }}',
+            url: absoluteUrl
+        };
+
+        // Check if navigator.share is supported (Mobile/modern browsers)
+        if (navigator.share) {
+            navigator.share(shareData).catch(err => {
+                console.log('Share canceled or failed', err);
+            });
+        } else {
+            // Fallback to copy to clipboard
+            navigator.clipboard.writeText(absoluteUrl).then(function () {
+                alert('✅ تم نسخ رابط السند للحافظة بنجاح:\n' + absoluteUrl);
+            }).catch(function (err) {
+                console.error('Could not copy text: ', err);
+                prompt('رابط السند (انسخه يدوياً):', absoluteUrl);
+            });
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تقارير التدقيق{% endblock %}
+
+{% block page_title %}
+    <div class="d-flex align-items-center">
+        <i class="fas fa-chart-bar text-primary me-2"></i>
+        تقارير التدقيق
+    </div>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'audit_log:dashboard' %}" class="btn btn-secondary">
+    <i class="fas fa-arrow-right"></i> لوحة التدقيق
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- فترة التقرير -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">فترة التقرير (بالأيام)</label>
+                <select name="days" class="form-select">
+                    <option value="7" {% if days == 7 %}selected{% endif %}>7 أيام</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>30 يوم</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>90 يوم</option>
+                    <option value="365" {% if days == 365 %}selected{% endif %}>سنة</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> تحديث
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- الإحصائيات -->
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-list-alt fa-2x text-primary mb-2"></i>
+                <h3>{{ stats.total_logs|default:0 }}</h3>
+                <small class="text-muted">إجمالي العمليات</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-plus-circle fa-2x text-success mb-2"></i>
+                <h3>{{ stats.creates|default:0 }}</h3>
+                <small class="text-muted">عمليات إنشاء</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-edit fa-2x text-warning mb-2"></i>
+                <h3>{{ stats.updates|default:0 }}</h3>
+                <small class="text-muted">عمليات تعديل</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-trash fa-2x text-danger mb-2"></i>
+                <h3>{{ stats.deletes|default:0 }}</h3>
+                <small class="text-muted">عمليات حذف</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

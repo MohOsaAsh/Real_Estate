@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title|default:"تعديل عقد" }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css\contract_modifications\modification_form.css'  %}">
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item"><a href="{% url 'rent:modification_list' %}">التعديلات</a></li>
+                        <li class="breadcrumb-item active">{{ title|default:"إضافة تعديل" }}</li>
+                    </ol>
+                </nav>
+                <h2 class="mb-0">
+                    <i class="fas fa-edit text-primary"></i>
+                    {{ title|default:"تعديل عقد" }}
+                </h2>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card form-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-contract"></i>
+                        معلومات التعديل
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="modificationForm">
+                        {% csrf_token %}
+
+                        {% if form.errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>يرجى تصحيح الأخطاء التالية:</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Contract Selection -->
+                        <div class="field-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-file-contract text-primary"></i>
+                                اختيار العقد
+                            </h6>
+                            <div class="mb-3">
+                                <label for="{{ form.contract.id_for_label }}" class="form-label required-field">
+                                    العقد
+                                </label>
+                                {{ form.contract }}
+                                {% if form.contract.help_text %}
+                                <div class="help-text">{{ form.contract.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Contract Info Display -->
+                            <div id="contractInfo" class="contract-info-box">
+                                <h6 class="mb-2">معلومات العقد:</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">المستأجر:</small>
+                                        <div id="tenantName"><strong>-</strong></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">قيمة الإيجار:</small>
+                                        <div id="rentAmount"><strong>-</strong></div>
+                                    </div>
+                                    <div class="col-md-6 mt-2">
+                                        <small class="text-muted">تاريخ البداية:</small>
+                                        <div id="startDate"><strong>-</strong></div>
+                                    </div>
+                                    <div class="col-md-6 mt-2">
+                                        <small class="text-muted">تاريخ الانتهاء:</small>
+                                        <div id="endDate"><strong>-</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Effective Date -->
+                        <div class="mb-3">
+                            <label for="{{ form.effective_date.id_for_label }}" class="form-label required-field">
+                                تاريخ السريان
+                            </label>
+                            {{ form.effective_date }}
+                            {% if form.effective_date.help_text %}
+                            <div class="help-text">{{ form.effective_date.help_text }}</div>
+                            {% endif %}
+
+                            <!-- تواريخ الاستحقاق المتاحة (للإيجار فقط) -->
+                            <div id="dueDatesContainer" style="display: none;">
+                                <div class="help-text mt-2">
+                                    <strong>اختر من تواريخ الاستحقاق:</strong>
+                                    <div id="dueDateButtons" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Type-specific fields -->
+                        <div class="field-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-cog text-primary"></i>
+                                تفاصيل التعديل
+                            </h6>
+
+                            {% for field in form %}
+                            {% if field.name not in 'contract,modification_type,effective_date,description,notes' %}
+                            <div class="mb-3 {% if field.field.widget.is_hidden %}d-none{% endif %}">
+                                <label for="{{ field.id_for_label }}"
+                                    class="form-label {% if field.field.required %}required-field{% endif %}">
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                <div class="help-text">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- Description & Notes -->
+                        <div class="field-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-sticky-note text-primary"></i>
+                                وصف وملاحظات
+                            </h6>
+                            <div class="mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">الوصف</label>
+                                {{ form.description }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">ملاحظات</label>
+                                {{ form.notes }}
+                            </div>
+                        </div>
+
+                        <!-- Hidden modification_type field -->
+                        {{ form.modification_type }}
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'rent:modification_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {% if is_edit %}تحديث{% else %}حفظ{% endif %} التعديل
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // بيانات العقود من السيرفر
+    const contractsData = {{ contracts_data| safe }};
+    const modificationType = '{{ modification_type }}';
+    const isRentChange = ['rent_increase', 'rent_decrease'].includes(modificationType);
+
+    // عناصر الـ Form
+    const contractSelect = document.getElementById('{{ form.contract.id_for_label }}');
+    const contractInfo = document.getElementById('contractInfo');
+    const effectiveDateInput = document.getElementById('{{ form.effective_date.id_for_label }}');
+    const dueDatesContainer = document.getElementById('dueDatesContainer');
+    const dueDateButtons = document.getElementById('dueDateButtons');
+
+    // حقول زيادة/تخفيض الإيجار
+    const oldRentField = document.getElementById('id_old_rent_amount');
+    const newRentField = document.getElementById('id_new_rent_amount');
+    const changeAmountField = document.getElementById('id_change_amount');
+    const changePercentageField = document.getElementById('id_change_percentage');
+
+    // عند تغيير العقد
+    contractSelect.addEventListener('change', function () {
+        const contractId = this.value;
+
+        if (contractId && contractsData[contractId]) {
+            const data = contractsData[contractId];
+
+            // عرض معلومات العقد
+            document.getElementById('tenantName').innerHTML = `<strong>${data.tenant_name}</strong>`;
+            document.getElementById('rentAmount').innerHTML = `<strong>${data.rent_amount} ريال</strong>`;
+            document.getElementById('startDate').innerHTML = `<strong>${data.start_date}</strong>`;
+            document.getElementById('endDate').innerHTML = `<strong>${data.end_date}</strong>`;
+            contractInfo.classList.add('show');
+
+
+            // ملء قيمة الإيجار القديمة
+            if (oldRentField) {
+                oldRentField.value = data.rent_amount;
+            }
+
+            // حساب تاريخ السريان للتمديد (اليوم التالي لانتهاء العقد)
+            if (modificationType === 'extension' && effectiveDateInput) {
+                // تاريخ الانتهاء من البيانات
+                const endDate = new Date(data.end_date);
+                // إضافة يوم واحد
+                endDate.setDate(endDate.getDate() + 1);
+                // تنسيق التاريخ بصيغة YYYY-MM-DD
+                const year = endDate.getFullYear();
+                const month = String(endDate.getMonth() + 1).padStart(2, '0');
+                const day = String(endDate.getDate()).padStart(2, '0');
+                const effectiveDate = `${year}-${month}-${day}`;
+                // تعيين التاريخ
+                effectiveDateInput.value = effectiveDate;
+            }
+
+
+
+            // إظهار تواريخ الاستحقاق لتعديلات الإيجار والخصم والقيمة المضافة
+            const showDueDates = (isRentChange || modificationType === 'discount' || modificationType === 'vat');
+
+            if (showDueDates && data.due_dates && data.due_dates.length > 0) {
+                dueDateButtons.innerHTML = '';
+                data.due_dates.forEach((date, index) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-sm btn-outline-primary due-date-btn';
+                    btn.textContent = date;
+                    btn.onclick = function () {
+                        // إزالة selected من الكل
+                        document.querySelectorAll('.due-date-btn').forEach(b => b.classList.remove('selected'));
+                        // إضافة selected للمختار
+                        this.classList.add('selected');
+                        // تعيين التاريخ
+                        effectiveDateInput.value = date;
+
+                        // للخصم: تعيين رقم الفترة
+                        if (modificationType === 'discount') {
+                            const periodInput = document.getElementById('id_discount_period_number');
+                            if (periodInput) {
+                                periodInput.value = index + 1;
+                            }
+                        }
+
+                        // للقيمة المضافة: تعيين رقم الفترة
+                        if (modificationType === 'vat') {
+                            const vatPeriodInput = document.getElementById('id_vat_period_number');
+                            if (vatPeriodInput) {
+                                vatPeriodInput.value = index + 1;
+                            }
+                        }
+                    };
+                    dueDateButtons.appendChild(btn);
+                });
+                dueDatesContainer.style.display = 'block';
+            } else {
+                dueDatesContainer.style.display = 'none';
+            }
+        } else {
+            contractInfo.classList.remove('show');
+            dueDatesContainer.style.display = 'none';
+        }
+    });
+
+    // حساب تلقائي لتغيير الإيجار
+    if (newRentField && oldRentField) {
+        newRentField.addEventListener('input', function () {
+            const oldRent = parseFloat(oldRentField.value) || 0;
+            const newRent = parseFloat(this.value) || 0;
+
+            if (oldRent > 0) {
+                const change = newRent - oldRent;
+                const percentage = (change / oldRent) * 100;
+
+                if (changeAmountField) {
+                    changeAmountField.value = change.toFixed(2);
+                }
+                if (changePercentageField) {
+                    changePercentageField.value = percentage.toFixed(2);
+                }
+            }
+        });
+    }
+
+    // تفعيل عند التحميل
+    window.addEventListener('DOMContentLoaded', function () {
+        if (contractSelect.value) {
+            contractSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}

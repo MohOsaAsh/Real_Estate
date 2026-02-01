@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% load humanize %}
+
+
+
+{% block title %}لوحة التحكم - نظام إدارة العقارات{% endblock %}
+
+{% block page_title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+
+<!-- Quick Actions -->
+<div class="row g-4 mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt text-primary me-2"></i>
+                    إجراءات سريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% if perms.rent.add_contract %}
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{% url 'rent:contract_create' %}" class="btn btn-outline-primary w-100 py-3 quick-action-btn">
+                            <i class="fas fa-plus-circle fa-2x d-block mb-2"></i>
+                            <span class="fw-semibold">عقد جديد</span>
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if perms.rent.add_receipt %}
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{% url 'rent:receipt_create' %}" class="btn btn-outline-success w-100 py-3 quick-action-btn">
+                            <i class="fas fa-money-check-alt fa-2x d-block mb-2"></i>
+                            <span class="fw-semibold">سند قبض</span>
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if perms.rent.add_tenant %}
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{% url 'rent:tenant_create' %}" class="btn btn-outline-info w-100 py-3 quick-action-btn">
+                            <i class="fas fa-user-plus fa-2x d-block mb-2"></i>
+                            <span class="fw-semibold">مستأجر جديد</span>
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if perms.rent.view_reports %}
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{% url 'rent:report_rep' %}" class="btn btn-outline-warning w-100 py-3 quick-action-btn">
+                            <i class="fas fa-chart-line fa-2x d-block mb-2"></i>
+                            <span class="fw-semibold">التقارير</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row g-4">
+    <!-- العقود المنتهية قريباً -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    العقود المنتهية قريباً
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if expiring_contracts_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم العقد</th>
+                                <th>المستأجر</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th class="text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in expiring_contracts_list %}
+                            <tr>
+                                <td><span class="fw-semibold">{{ contract.contract_number }}</span></td>
+                                <td>{{ contract.tenant.name }}</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ contract.end_date }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'rent:contract_detail' contract.pk %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="عرض التفاصيل">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                    <p class="mb-0">لا توجد عقود منتهية قريباً</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- المدفوعات المتأخرة -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock text-danger me-2"></i>
+                    المدفوعات المتأخرة
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if overdue_contracts %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم العقد</th>
+                                <th>المستأجر</th>
+                                <th>المبلغ المستحق</th>
+                                <th class="text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in overdue_contracts %}
+                            <tr>
+                                <td><span class="fw-semibold">{{ item.contract.contract_number }}</span></td>
+                                <td>{{ item.contract.tenant.name }}</td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-money-bill me-1"></i>
+                                        {{ item.outstanding|floatformat:2|intcomma }} ريال
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'rent:contract_detail' item.contract.pk %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="عرض التفاصيل">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if perms.rent.add_receipt %}
+                                    <a href="{% url 'rent:receipt_create' %}?contract={{ item.contract.pk }}"
+                                       class="btn btn-sm btn-outline-success"
+                                       title="إضافة دفعة">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                    <p class="mb-0">لا توجد مدفوعات متأخرة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <!-- العقود النشطة -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2 fw-normal">العقود النشطة</h6>
+                        <h2 class="mb-0 fw-bold">{{ total_contracts|default:0|intcomma }}</h2>
+                    </div>
+                    <div class="icon-box bg-primary bg-gradient">
+                        <i class="fas fa-file-contract fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معدل الإشغال -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2 fw-normal">معدل الإشغال</h6>
+                        <h2 class="mb-0 fw-bold">{{ occupancy_rate|floatformat:1|default:"0.0" }}%</h2>
+                        <small class="text-muted">{{ rented_units|default:0|intcomma }} من {{ total_units|default:0 }}</small>
+                    </div>
+                    <div class="icon-box bg-success bg-gradient">
+                        <i class="fas fa-chart-pie fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التحصيل اليوم -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2 fw-normal">التحصيل اليوم</h6>
+                        <h2 class="mb-0 fw-bold">{{ total_receipts_today|floatformat:0|default:"0" }}</h2>
+                        <small class="text-muted">ريال سعودي</small>
+                    </div>
+                    <div class="icon-box bg-info bg-gradient">
+                        <i class="fas fa-money-bill-wave fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التحصيل الشهري -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2 fw-normal">التحصيل الشهري</h6>
+                        <h2 class="mb-0 fw-bold">{{ total_receipts_month|floatformat:0|default:"0" }}</h2>
+                        <small class="text-muted">ريال سعودي</small>
+                    </div>
+                    <div class="icon-box bg-warning bg-gradient">
+                        <i class="fas fa-calendar-check fa-2x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

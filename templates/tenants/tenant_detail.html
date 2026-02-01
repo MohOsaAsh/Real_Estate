@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تفاصيل المستأجر - {{ tenant.name }}{% endblock %}
+
+{% block page_title %}تفاصيل المستأجر - {{ tenant.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if perms.rent.change_tenant %}
+    <a href="{% url 'rent:tenant_update' tenant.pk %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> تعديل
+    </a>
+    {% endif %}
+    {% if perms.rent.add_contract %}
+    <a href="{% url 'rent:contract_create' %}?tenant={{ tenant.pk }}" class="btn btn-success">
+        <i class="fas fa-file-contract"></i> عقد جديد
+    </a>
+    {% endif %}
+    {% if perms.rent.delete_tenant %}
+    <a href="{% url 'rent:tenant_delete' tenant.pk %}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> حذف
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- معلومات المستأجر -->
+    <div class="col-lg-8">
+        <!-- البطاقة الرئيسية -->
+        <div class="tenant-detail-header mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar-circle" style="width: 80px; height: 80px; font-size: 32px;">
+                    {{ tenant.name|slice:":1" }}
+                </div>
+                <div class="flex-grow-1">
+                    <h3 class="mb-2 text-white">{{ tenant.name }}</h3>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-light text-dark">{{ tenant.get_tenant_type_display }}</span>
+                        {% if tenant.is_active %}
+                        <span class="badge bg-success">نشط</span>
+                        {% else %}
+                        <span class="badge bg-secondary">غير نشط</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- معلومات أساسية -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-id-card"></i> معلومات أساسية</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">نوع المستأجر</label>
+                        <div class="fw-bold">{{ tenant.get_tenant_type_display }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم الهوية/السجل التجاري</label>
+                        <div class="fw-bold">{{ tenant.id_number }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم الهاتف</label>
+                        <div>
+                            <i class="fas fa-phone text-success"></i>
+                            <a href="tel:{{ tenant.phone }}" class="text-decoration-none">
+                                {{ tenant.phone }}
+                            </a>
+                        </div>
+                    </div>
+                    {% if tenant.email %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">البريد الإلكتروني</label>
+                        <div>
+                            <i class="fas fa-envelope text-info"></i>
+                            <a href="mailto:{{ tenant.email }}" class="text-decoration-none">
+                                {{ tenant.email }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if tenant.address %}
+                    <div class="col-12">
+                        <label class="text-muted small">العنوان</label>
+                        <div>
+                            <i class="fas fa-map-marker-alt text-danger"></i>
+                            {{ tenant.address }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- معلومات الوكالة -->
+        {% if tenant.has_authorization %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-file-signature"></i> معلومات الوكالة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم الوكالة</label>
+                        <div class="fw-bold">{{ tenant.authorization_number }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">تاريخ الوكالة</label>
+                        <div class="fw-bold">{{ tenant.authorization_date }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- العقود النشطة -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-contract"></i> العقود النشطة</h5>
+                <span class="badge bg-light text-dark">{{ active_contracts|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if active_contracts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم العقد</th>
+                                <th>الوحدات</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th>الإيجار</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in active_contracts %}
+                            <tr>
+                                <td>{{ contract.contract_number }}</td>
+                                <td>
+                                    {% for unit in contract.units.all %}
+                                    <span class="badge bg-secondary">{{ unit.unit_number }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ contract.end_date }}</td>
+                                <td class="fw-bold text-success">{{ contract.annual_rent|floatformat:2 }}</td>
+                                <td>
+                                    <a href="{% url 'rent:contract_detail' contract.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>لا توجد عقود نشطة حالياً</p>
+                    <a href="{% url 'rent:contract_create' %}?tenant={{ tenant.pk }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> إنشاء عقد جديد
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- تاريخ العقود -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> تاريخ العقود</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if all_contracts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم العقد</th>
+                                <th>الفترة</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in all_contracts %}
+                            <tr>
+                                <td>{{ contract.contract_number }}</td>
+                                <td>{{ contract.start_date }} - {{ contract.end_date }}</td>
+                                <td>
+                                    {% if contract.status == 'active' %}
+                                    <span class="badge bg-success">نشط</span>
+                                    {% elif contract.status == 'terminated' %}
+                                    <span class="badge bg-danger">منتهي</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ contract.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'rent:contract_detail' contract.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- المستندات -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-folder-open"></i> المستندات</h5>
+                {% if perms.rent.add_tenantdocument %}
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-upload"></i> رفع مستند
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if documents %}
+                <div class="row g-3">
+                    {% for doc in documents %}
+                    <div class="col-md-6">
+                        <div class="document-item">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="document-icon pdf">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ doc.title }}</h6>
+                                    <small class="text-muted">{{ doc.get_document_type_display }}</small>
+                                </div>
+                                <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-file fa-3x mb-3"></i>
+                    <p>لا توجد مستندات مرفوعة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- الشريط الجانبي -->
+    <div class="col-lg-4">
+        <!-- الإحصائيات -->
+        <div class="card border-0 shadow-sm mb-4 tenant-stats">
+            <div class="card-body text-center">
+                <div class="stat-item mb-3">
+                    <div class="stat-value">{{ active_contracts|length }}</div>
+                    <div class="stat-label">عقود نشطة</div>
+                </div>
+                <hr class="border-light">
+                <div class="stat-item mb-3">
+                    <div class="stat-value text-danger">{{ outstanding_balance|floatformat:2 }}</div>
+                    <div class="stat-label">الرصيد المستحق (ريال)</div>
+                </div>
+                <hr class="border-light">
+                <div class="stat-item">
+                    <div class="stat-value">{{ all_contracts|length }}</div>
+                    <div class="stat-label">إجمالي العقود</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- إجراءات سريعة -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> إجراءات سريعة</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if perms.rent.add_contract %}
+                    <a href="{% url 'rent:contract_create' %}?tenant={{ tenant.pk }}"
+                       class="btn btn-success">
+                        <i class="fas fa-file-contract"></i> عقد جديد
+                    </a>
+                    {% endif %}
+                    {% if perms.rent.change_tenant %}
+                    <a href="{% url 'rent:tenant_update' tenant.pk %}"
+                       class="btn btn-warning">
+                        <i class="fas fa-edit"></i> تعديل البيانات
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-info" onclick="sendWhatsApp('{{ tenant.phone }}')">
+                        <i class="fab fa-whatsapp"></i> إرسال واتساب
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/tenants.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/tenants.js' %}"></script>
+<script>
+function sendWhatsApp(phone) {
+    window.open(`https://wa.me/${phone}`, '_blank');
+}
+</script>
+{% endblock %}

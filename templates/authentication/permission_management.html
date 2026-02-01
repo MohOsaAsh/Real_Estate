@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+
+{% block title %}إدارة الصلاحيات - {{ object.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .group-card {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        background: #fff;
+    }
+    .group-card:hover {
+        border-color: #6c757d;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .group-card.active {
+        border-color: #198754;
+        background: #f0fdf4;
+    }
+    .group-desc {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 4px;
+    }
+    .group-perms-toggle {
+        cursor: pointer;
+        color: #0d6efd;
+        font-size: 0.8rem;
+        text-decoration: none;
+    }
+    .group-perms-toggle:hover {
+        text-decoration: underline;
+    }
+    .group-perms-list {
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 0.8rem;
+        margin-top: 8px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    .group-perms-list .badge {
+        margin: 2px;
+        font-weight: normal;
+    }
+    .perm-category-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    .perm-category-header {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+    .perm-category-header:hover {
+        background: #e9ecef;
+    }
+    .perm-category-header .category-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .perm-category-header .category-count {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .perm-category-body {
+        padding: 12px 15px;
+    }
+    .perm-item {
+        padding: 6px 8px;
+        border-radius: 5px;
+        transition: background 0.2s;
+    }
+    .perm-item:hover {
+        background: #f0f0f0;
+    }
+    .perm-item label {
+        cursor: pointer;
+        margin-bottom: 0;
+    }
+    .perm-item .perm-code {
+        font-size: 0.75rem;
+        color: #999;
+        font-family: monospace;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .status-switch {
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    .status-switch:hover {
+        background: #e9ecef;
+    }
+    .btn-category-action {
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        border-radius: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <a href="{% url 'auth_app:user-detail' object.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i> العودة للملف الشخصي
+        </a>
+    </div>
+</div>
+
+<form method="post" id="permissionForm">
+    {% csrf_token %}
+
+    <!-- User Info -->
+    <div class="alert alert-info d-flex align-items-center mb-4">
+        <i class="fas fa-user-circle fa-2x me-3"></i>
+        <div>
+            <strong>{{ object.username }}</strong>
+            {% if object.get_full_name %} - {{ object.get_full_name }}{% endif %}
+            <br>
+            <small class="text-muted">{{ object.email|default:"لا يوجد بريد" }}</small>
+        </div>
+    </div>
+
+    <!-- Account Status -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-toggle-on"></i> حالة الحساب</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="status-switch">
+                        <div class="form-check form-switch d-flex justify-content-center">
+                            {{ form.is_active }}
+                            <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">
+                                <strong>{{ form.is_active.label }}</strong>
+                            </label>
+                        </div>
+                        <small class="text-muted">تمكين أو تعطيل الحساب</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="status-switch">
+                        <div class="form-check form-switch d-flex justify-content-center">
+                            {{ form.is_staff }}
+                            <label class="form-check-label ms-2" for="{{ form.is_staff.id_for_label }}">
+                                <strong>{{ form.is_staff.label }}</strong>
+                            </label>
+                        </div>
+                        <small class="text-muted">الوصول للوحة الإدارة</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="status-switch">
+                        <div class="form-check form-switch d-flex justify-content-center">
+                            {{ form.is_superuser }}
+                            <label class="form-check-label ms-2" for="{{ form.is_superuser.id_for_label }}">
+                                <strong>{{ form.is_superuser.label }}</strong>
+                            </label>
+                        </div>
+                        <small class="text-muted">جميع الصلاحيات تلقائياً</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Groups/Roles Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-users-cog"></i> الأدوار (المجموعات)</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                <i class="fas fa-info-circle"></i>
+                اختر دوراً لمنح مجموعة صلاحيات محددة مسبقاً. يمكنك اختيار أكثر من دور.
+            </p>
+
+            {% if available_groups %}
+            <div class="row">
+                {% for group in available_groups %}
+                <div class="col-md-6">
+                    <div class="group-card {% if group in object.groups.all %}active{% endif %}" id="group-card-{{ group.id }}">
+                        <div class="form-check">
+                            <input class="form-check-input group-checkbox"
+                                   type="checkbox"
+                                   name="groups"
+                                   value="{{ group.id }}"
+                                   id="group_{{ group.id }}"
+                                   data-group-id="{{ group.id }}"
+                                   {% if group in object.groups.all %}checked{% endif %}>
+                            <label class="form-check-label" for="group_{{ group.id }}">
+                                <strong>{{ group.name }}</strong>
+                                <span class="badge bg-secondary ms-1">{{ group.permissions.count }}</span>
+                            </label>
+                        </div>
+                        {% if group_descriptions %}
+                        <div class="group-desc">
+                            {% for gname, gdesc in group_descriptions.items %}
+                                {% if gname == group.name %}{{ gdesc }}{% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="mt-2">
+                            <a class="group-perms-toggle"
+                               data-bs-toggle="collapse"
+                               href="#groupPerms{{ group.id }}"
+                               role="button">
+                                <i class="fas fa-chevron-down"></i> عرض الصلاحيات ({{ group.permissions.count }})
+                            </a>
+                            <div class="collapse" id="groupPerms{{ group.id }}">
+                                <div class="group-perms-list">
+                                    {% for perm in group.permissions.all %}
+                                    <span class="badge bg-light text-dark border">{{ perm.name }}</span>
+                                    {% empty %}
+                                    <span class="text-muted">لا توجد صلاحيات</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-warning mb-0">
+                <i class="fas fa-exclamation-triangle"></i>
+                لا توجد مجموعات. قم بتشغيل <code>python manage.py setup_permissions</code> لإنشائها.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Individual Permissions Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="section-header mb-0">
+                <h5 class="mb-0"><i class="fas fa-shield-alt"></i> الصلاحيات الفردية</h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="selectAllBtn">
+                        <i class="fas fa-check-double"></i> تحديد الكل
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBtn">
+                        <i class="fas fa-times"></i> إلغاء الكل
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                <i class="fas fa-info-circle"></i>
+                الصلاحيات الفردية تُمنح مباشرة للمستخدم بالإضافة إلى صلاحيات الأدوار المختارة.
+            </p>
+
+            {% regroup available_permissions by content_type.model as model_list %}
+
+            <div class="accordion" id="permAccordion">
+                {% for model_group in model_list %}
+                <div class="perm-category-card">
+                    <div class="perm-category-header"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#permCat_{{ model_group.grouper }}">
+                        <div class="category-title">
+                            {% for cat_key, cat_val in permission_categories.items %}
+                                {% if cat_key == model_group.grouper %}
+                                    <i class="fas {{ cat_val.icon }} me-2 text-primary"></i>
+                                    {{ cat_val.label }}
+                                {% endif %}
+                            {% endfor %}
+                            <span class="category-count ms-2">({{ model_group.list|length }})</span>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-success btn-category-action select-cat-all"
+                                    data-category="{{ model_group.grouper }}"
+                                    onclick="event.stopPropagation();">
+                                تحديد
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-category-action deselect-cat-all"
+                                    data-category="{{ model_group.grouper }}"
+                                    onclick="event.stopPropagation();">
+                                إلغاء
+                            </button>
+                            <i class="fas fa-chevron-down ms-2"></i>
+                        </div>
+                    </div>
+                    <div class="collapse show" id="permCat_{{ model_group.grouper }}" data-bs-parent="">
+                        <div class="perm-category-body">
+                            <div class="row">
+                                {% for permission in model_group.list %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="perm-item">
+                                        <div class="form-check">
+                                            <input class="form-check-input permission-checkbox"
+                                                   type="checkbox"
+                                                   name="user_permissions"
+                                                   value="{{ permission.id }}"
+                                                   id="perm_{{ permission.id }}"
+                                                   data-category="{{ model_group.grouper }}"
+                                                   {% if permission in object.user_permissions.all %}checked{% endif %}>
+                                            <label class="form-check-label" for="perm_{{ permission.id }}">
+                                                {{ permission.name }}
+                                                <br>
+                                                <span class="perm-code">{{ permission.codename }}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex gap-2 justify-content-end mb-4">
+        <a href="{% url 'auth_app:user-detail' object.pk %}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-times"></i> إلغاء
+        </a>
+        <button type="submit" class="btn btn-warning btn-lg">
+            <i class="fas fa-save"></i> حفظ الصلاحيات
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Toggle group card active state
+    document.querySelectorAll('.group-checkbox').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            var card = document.getElementById('group-card-' + this.dataset.groupId);
+            if (this.checked) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+    });
+
+    // Select All permissions
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.permission-checkbox').forEach(function(cb) {
+            cb.checked = true;
+        });
+    });
+
+    // Deselect All permissions
+    document.getElementById('deselectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.permission-checkbox').forEach(function(cb) {
+            cb.checked = false;
+        });
+    });
+
+    // Per-category select all
+    document.querySelectorAll('.select-cat-all').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var cat = this.dataset.category;
+            document.querySelectorAll('.permission-checkbox[data-category="' + cat + '"]').forEach(function(cb) {
+                cb.checked = true;
+            });
+        });
+    });
+
+    // Per-category deselect all
+    document.querySelectorAll('.deselect-cat-all').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var cat = this.dataset.category;
+            document.querySelectorAll('.permission-checkbox[data-category="' + cat + '"]').forEach(function(cb) {
+                cb.checked = false;
+            });
+        });
+    });
+
+    // Form submission confirmation
+    document.getElementById('permissionForm').addEventListener('submit', function(e) {
+        if (!confirm('هل أنت متأكد من حفظ التغييرات على صلاحيات هذا المستخدم؟')) {
+            e.preventDefault();
+        }
+    });
+
+    // Superuser warning
+    var superuserField = document.getElementById('{{ form.is_superuser.id_for_label }}');
+    if (superuserField) {
+        superuserField.addEventListener('change', function() {
+            if (this.checked) {
+                alert('تحذير: المشرف العام لديه جميع الصلاحيات في النظام!');
+            }
+        });
+    }
+</script>
+{% endblock %}

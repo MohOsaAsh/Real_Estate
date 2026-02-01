@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Welcome Card -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h2>
+                    <i class="fas fa-hand-wave"></i> مرحباً، {{ user.get_full_name|default:user.username }}!
+                </h2>
+                <p class="lead mb-0">
+                    <i class="fas fa-clock"></i> آخر تسجيل دخول: {{ user.last_login|date:"Y/m/d - H:i" }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Row -->
+<div class="row mb-4">
+    <!-- Total Users -->
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <h3 class="display-4">{{ total_users }}</h3>
+                <p class="text-muted mb-0">إجمالي المستخدمين</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Users -->
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-user-check fa-3x text-success mb-3"></i>
+                <h3 class="display-4">{{ active_users }}</h3>
+                <p class="text-muted mb-0">المستخدمون النشطون</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Info & Permissions -->
+<div class="row">
+    <!-- User Information -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-id-card"></i> معلوماتي الشخصية
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td><strong><i class="fas fa-user"></i> اسم المستخدم:</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-envelope"></i> البريد الإلكتروني:</strong></td>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-calendar"></i> تاريخ الانضمام:</strong></td>
+                        <td>{{ user.date_joined|date:"Y/m/d" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-shield-alt"></i> الحالة:</strong></td>
+                        <td>
+                            {% if user.is_superuser %}
+                                <span class="badge bg-danger">مشرف عام</span>
+                            {% elif user.is_staff %}
+                                <span class="badge bg-warning">موظف</span>
+                            {% else %}
+                                <span class="badge bg-info">مستخدم عادي</span>
+                            {% endif %}
+                            
+                            {% if user.is_active %}
+                                <span class="badge bg-success">نشط</span>
+                            {% else %}
+                                <span class="badge bg-secondary">غير نشط</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'auth_app:user-update' user.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> تعديل معلوماتي
+                    </a>
+                    <a href="{% url 'auth_app:user-detail' user.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-eye"></i> عرض الملف الكامل
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-rocket"></i> الإجراءات السريعة
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if perms.auth.view_user %}
+                    <a href="{% url 'auth_app:user-list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-users"></i> عرض جميع المستخدمين
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser %}
+                    <a href="{% url 'auth_app:permission-management' user.pk %}" class="btn btn-outline-warning">
+                        <i class="fas fa-key"></i> إدارة الصلاحيات
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'auth_app:user-detail' user.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-lock"></i> صلاحياتي
+                    </a>
+                    
+                    <form method="post" action="{% url 'auth_app:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Permissions Info -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> نصائح الاستخدام
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li class="mb-2">قم بتحديث معلوماتك الشخصية بانتظام</li>
+                    <li class="mb-2">استخدم كلمة مرور قوية</li>
+                    <li class="mb-2">لا تشارك معلومات حسابك مع الآخرين</li>
+                    <li>سجل خروج عند الانتهاء من العمل</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users List for Superuser -->
+{% if user.is_superuser %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users-cog"></i> إدارة المستخدمين
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-hashtag"></i> #</th>
+                                <th><i class="fas fa-user"></i> المستخدم</th>
+                                <th><i class="fas fa-envelope"></i> البريد</th>
+                                <th><i class="fas fa-calendar"></i> تاريخ الانضمام</th>
+                                <th><i class="fas fa-shield-alt"></i> الحالة</th>
+                                <th><i class="fas fa-cog"></i> الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_item in users %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <strong>{{ user_item.username }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ user_item.get_full_name }}</small>
+                                </td>
+                                <td>{{ user_item.email }}</td>
+                                <td>{{ user_item.date_joined|date:"Y/m/d" }}</td>
+                                <td>
+                                    {% if user_item.is_superuser %}
+                                        <span class="badge bg-danger">مشرف</span>
+                                    {% elif user_item.is_staff %}
+                                        <span class="badge bg-warning">موظف</span>
+                                    {% else %}
+                                        <span class="badge bg-info">عادي</span>
+                                    {% endif %}
+                                    
+                                    {% if user_item.is_active %}
+                                        <span class="badge bg-success">نشط</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">معطل</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'auth_app:user-detail' user_item.pk %}" 
+                                           class="btn btn-outline-info" 
+                                           title="عرض">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'auth_app:user-update' user_item.pk %}" 
+                                           class="btn btn-outline-primary" 
+                                           title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'auth_app:permission-management' user_item.pk %}" 
+                                           class="btn btn-outline-warning" 
+                                           title="الصلاحيات">
+                                            <i class="fas fa-key"></i>
+                                        </a>
+                                        {% if user_item != user %}
+                                        <a href="{% url 'auth_app:user-delete' user_item.pk %}" 
+                                           class="btn btn-outline-danger" 
+                                           title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    لا يوجد مستخدمين
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

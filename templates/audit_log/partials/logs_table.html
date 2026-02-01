@@ -1,0 +1,53 @@
+<!-- جدول السجلات (partial للـ HTMX) -->
+<table class="table table-hover mb-0">
+    <thead class="table-light">
+        <tr>
+            <th>#</th>
+            <th>التاريخ</th>
+            <th>المستخدم</th>
+            <th>العملية</th>
+            <th>النموذج</th>
+            <th>الوصف</th>
+            <th>IP</th>
+            <th>التفاصيل</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in page_obj %}
+        <tr>
+            <td>{{ log.pk }}</td>
+            <td><small>{{ log.created_at|date:"Y/m/d H:i" }}</small></td>
+            <td>{{ log.user_name }}</td>
+            <td>
+                {% if log.action == 'create' %}
+                    <span class="badge bg-success">إنشاء</span>
+                {% elif log.action == 'update' %}
+                    <span class="badge bg-warning text-dark">تعديل</span>
+                {% elif log.action == 'delete' %}
+                    <span class="badge bg-danger">حذف</span>
+                {% elif log.action == 'login' %}
+                    <span class="badge bg-info">دخول</span>
+                {% elif log.action == 'logout' %}
+                    <span class="badge bg-secondary">خروج</span>
+                {% elif log.action == 'login_failed' %}
+                    <span class="badge bg-danger">دخول فاشل</span>
+                {% else %}
+                    <span class="badge bg-dark">{{ log.action }}</span>
+                {% endif %}
+            </td>
+            <td>{{ log.model_name }}</td>
+            <td><small>{{ log.object_repr|truncatechars:40 }}</small></td>
+            <td><small>{{ log.ip_address|default:"-" }}</small></td>
+            <td>
+                <a href="{% url 'audit_log:log_detail' log.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i>
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center text-muted py-4">لا توجد سجلات</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

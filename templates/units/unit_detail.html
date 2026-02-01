@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تفاصيل الوحدة - {{ unit.unit_number }}{% endblock %}
+
+{% block page_title %}تفاصيل الوحدة - {{ unit.building.name }} - {{ unit.unit_number }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if perms.rent.change_unit %}
+    <a href="{% url 'rent:unit_update' unit.pk %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> تعديل
+    </a>
+    {% endif %}
+    {% if unit.status == 'available' and perms.rent.add_contract %}
+    <a href="{% url 'rent:contract_create' %}?unit={{ unit.pk }}" class="btn btn-success">
+        <i class="fas fa-file-contract"></i> إنشاء عقد
+    </a>
+    {% endif %}
+    {% if perms.rent.delete_unit %}
+    <a href="{% url 'rent:unit_delete' unit.pk %}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> حذف
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- معلومات الوحدة -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-home"></i> معلومات الوحدة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم الوحدة</label>
+                        <div class="fw-bold fs-4">{{ unit.unit_number }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">الحالة</label>
+                        <div>
+                            {% if unit.status == 'available' %}
+                            <span class="badge bg-success fs-5">متاحة</span>
+                            {% elif unit.status == 'rented' %}
+                            <span class="badge bg-info fs-5">مؤجرة</span>
+                            {% elif unit.status == 'frozen' %}
+                            <span class="badge bg-secondary fs-5">مجمدة</span>
+                            {% elif unit.status == 'maintenance' %}
+                            <span class="badge bg-warning fs-5">صيانة</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">المبنى</label>
+                        <div class="fw-bold">
+                            <a href="{% url 'rent:building_detail' unit.building.pk %}">
+                                {{ unit.building.name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">الأرض</label>
+                        <div>
+                            <a href="{% url 'rent:land_detail' unit.building.land.pk %}">
+                                {{ unit.building.land.name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">الطابق</label>
+                        <div class="fw-bold fs-5">{{ unit.floor }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">المساحة</label>
+                        <div class="fw-bold text-primary fs-4">{{ unit.area|floatformat:2 }} م²</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">عدد الغرف</label>
+                        <div class="fw-bold">
+                            <i class="fas fa-bed text-info"></i> {{ unit.rooms_count }} غرف
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">عدد الحمامات</label>
+                        <div class="fw-bold">
+                            <i class="fas fa-bath text-info"></i> {{ unit.bathrooms_count }} حمام
+                        </div>
+                    </div>
+                    
+                    {% if unit.water_meter_number %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم عداد المياه</label>
+                        <div>{{ unit.water_meter_number }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if unit.electricity_meter_number %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم عداد الكهرباء</label>
+                        <div>{{ unit.electricity_meter_number }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if unit.notes %}
+                    <div class="col-12">
+                        <label class="text-muted small">ملاحظات</label>
+                        <div class="alert alert-info mb-0">{{ unit.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- العقد الحالي -->
+        {% if current_contract %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-contract"></i> العقد الحالي</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم العقد</label>
+                        <div class="fw-bold">
+                            <a href="{% url 'rent:contract_detail' current_contract.pk %}">
+                                {{ current_contract.contract_number }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">المستأجر</label>
+                        <div class="fw-bold">
+                            <a href="{% url 'rent:tenant_detail' current_contract.tenant.pk %}">
+                                {{ current_contract.tenant.name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">تاريخ البداية</label>
+                        <div>{{ current_contract.start_date }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">تاريخ النهاية</label>
+                        <div>{{ current_contract.end_date }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">قيمة الإيجار</label>
+                        <div class="fw-bold text-success fs-4">
+                            {{ current_contract.annual_rent|floatformat:2 }} ريال
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">دورية السداد</label>
+                        <div>{{ current_contract.get_payment_frequency_display }}</div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'rent:contract_detail' current_contract.pk %}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> عرض تفاصيل العقد
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- تاريخ العقود -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> تاريخ العقود</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if contract_history %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم العقد</th>
+                                <th>المستأجر</th>
+                                <th>الفترة</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in contract_history %}
+                            <tr>
+                                <td>{{ contract.contract_number }}</td>
+                                <td>{{ contract.tenant.name }}</td>
+                                <td>{{ contract.start_date }} - {{ contract.end_date }}</td>
+                                <td>
+                                    {% if contract.status == 'active' %}
+                                    <span class="badge bg-success">نشط</span>
+                                    {% elif contract.status == 'terminated' %}
+                                    <span class="badge bg-danger">منتهي</span>
+                                    {% elif contract.status == 'expired' %}
+                                    <span class="badge bg-dark">منتهي الصلاحية</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ contract.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'rent:contract_detail' contract.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>لا يوجد تاريخ عقود لهذه الوحدة</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- الشريط الجانبي -->
+    <div class="col-lg-4">
+        <!-- إحصائيات سريعة -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> معلومات سريعة</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                    <span class="text-muted">نوع المبنى</span>
+                    <span class="fw-bold">{{ unit.building.get_building_type_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                    <span class="text-muted">إجمالي الطوابق</span>
+                    <span class="fw-bold">{{ unit.building.floors_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                    <span class="text-muted">سنة البناء</span>
+                    <span class="fw-bold">{{ unit.building.construction_year|default:"غير محدد" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- إجراءات سريعة -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> إجراءات سريعة</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if unit.status == 'available' and perms.rent.add_contract %}
+                    <a href="{% url 'rent:contract_create' %}?unit={{ unit.pk }}"
+                       class="btn btn-success">
+                        <i class="fas fa-file-contract"></i> إنشاء عقد جديد
+                    </a>
+                    {% endif %}
+
+                    {% if perms.rent.change_unit %}
+                    <a href="{% url 'rent:unit_update' unit.pk %}"
+                       class="btn btn-warning">
+                        <i class="fas fa-edit"></i> تعديل البيانات
+                    </a>
+                    {% endif %}
+                    
+                    {% if unit.status != 'maintenance' %}
+                    <button class="btn btn-outline-warning" onclick="changeStatus('maintenance')">
+                        <i class="fas fa-tools"></i> تحويل للصيانة
+                    </button>
+                    {% endif %}
+                    
+                    {% if unit.status == 'available' %}
+                    <button class="btn btn-outline-secondary" onclick="changeStatus('frozen')">
+                        <i class="fas fa-snowflake"></i> تجميد الوحدة
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/units.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/units.js' %}"></script>
+<script>
+function changeStatus(newStatus) {
+    if (confirm('هل تريد تغيير حالة الوحدة؟')) {
+        // AJAX call to change status
+        $.ajax({
+            url: '{% url "rent:unit_detail" unit.pk %}',
+            method: 'POST',
+            data: {
+                'action': 'change_status',
+                'status': newStatus,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function() {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

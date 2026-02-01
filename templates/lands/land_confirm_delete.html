@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}حذف الأرض - {{ object.name }}{% endblock %}
+{% block page_title %}حذف الأرض{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-trash-alt"></i> تأكيد حذف الأرض
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>هل أنت متأكد من رغبتك في حذف الأرض <strong>{{ object.name }}</strong>؟</p>
+                <p>سيتم تعطيل الأرض فقط ولن يتم حذفها نهائيًا.</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rent:land_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> تأكيد الحذف
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/lands.css' %}" rel="stylesheet">
+{% endblock %}

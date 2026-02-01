@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إنشاء سند قبض جديد{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <!-- عنوان الصفحة -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="fas fa-file-invoice-dollar"></i>
+                إنشاء سند قبض جديد
+            </h2>
+            <p class="text-muted">املأ البيانات وسيتم توزيع المبلغ تلقائياً على الفترات غير المسددة (FIFO)</p>
+        </div>
+    </div>
+    
+    <!-- رسائل -->
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if preview_error %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ preview_error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Form -->
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- بيانات السند الأساسية -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit"></i>
+                    بيانات السند
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.contract.label }} <span class="text-danger">*</span></label>
+                        {{ form.contract }}
+                        {% if form.contract.errors %}
+                            <div class="invalid-feedback d-block">{{ form.contract.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.contract.help_text }}</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.receipt_number.label }}</label>
+                        {{ form.receipt_number }}
+                        <small class="form-text text-muted">يُولد تلقائياً</small>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.receipt_date.label }} <span class="text-danger">*</span></label>
+                        {{ form.receipt_date }}
+                        {% if form.receipt_date.errors %}
+                            <div class="invalid-feedback d-block">{{ form.receipt_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.amount.label }} <span class="text-danger">*</span></label>
+                        {{ form.amount }}
+                        {% if form.amount.errors %}
+                            <div class="invalid-feedback d-block">{{ form.amount.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">{{ form.amount.help_text }}</small>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.payment_method.label }} <span class="text-danger">*</span></label>
+                        {{ form.payment_method }}
+                        {% if form.payment_method.errors %}
+                            <div class="invalid-feedback d-block">{{ form.payment_method.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if not preview_mode %}
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" formmethod="get" class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye"></i>
+                            معاينة التوزيع
+                        </button>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i>
+                            سيتم عرض كيفية توزيع المبلغ على الفترات المستحقة
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- المعاينة -->
+        {% if preview_mode %}
+        
+        <!-- معلومات العقد -->
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-contract"></i>
+                    معلومات العقد
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>رقم العقد:</strong><br>
+                        <span class="fs-5">{{ selected_contract.contract_number }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>المستأجر:</strong><br>
+                        <span class="fs-5">{{ selected_contract.tenant.name }}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>قيمة العقد:</strong><br>
+                        <span class="fs-6 text-primary">{{ total_contract_value|floatformat:2 }}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>المدفوع سابقاً:</strong><br>
+                        <span class="fs-6 text-success">{{ total_paid|floatformat:2 }}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>المتبقي:</strong><br>
+                        <span class="fs-6 text-danger">{{ total_remaining|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-calculator"></i>
+                            <strong>المبلغ المُدخل:</strong> {{ input_amount|floatformat:2 }} ريال
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- جميع الفترات -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt"></i>
+                    جميع فترات العقد
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم</th>
+                                <th>من - إلى</th>
+                                <th>المطلوب</th>
+                                <th>المدفوع</th>
+                                <th>المتبقي</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for period in all_periods %}
+                            <tr class="{% if period.status == 'paid' %}table-success{% elif period.status == 'overdue' %}table-danger{% elif period.status == 'partial' %}table-warning{% endif %}">
+                                <td><strong>{{ period.period_number }}</strong></td>
+                                <td>
+                                    <small>{{ period.start_date|date:"Y-m-d" }}</small><br>
+                                    <small>{{ period.end_date|date:"Y-m-d" }}</small>
+                                </td>
+                                <td>{{ period.due_amount|floatformat:2 }}</td>
+                                <td>{{ period.paid_amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if period.remaining_amount > 0 %}
+                                        <strong class="text-danger">{{ period.remaining_amount|floatformat:2 }}</strong>
+                                    {% else %}
+                                        <span class="text-success">0.00 ✓</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if period.status == 'paid' %}
+                                        <span class="badge bg-success">مسدد</span>
+                                    {% elif period.status == 'partial' %}
+                                        <span class="badge bg-warning">جزئي</span>
+                                    {% elif period.status == 'overdue' %}
+                                        <span class="badge bg-danger">متأخر</span>
+                                    {% elif period.status == 'current' %}
+                                        <span class="badge bg-info">حالي</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">مستقبلي</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- التوزيع المقترح -->
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i>
+                    التوزيع المقترح (FIFO - الأقدم أولاً)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if distribution %}
+                <div class="alert alert-success mb-3">
+                    <i class="fas fa-check-circle"></i>
+                    سيتم توزيع المبلغ <strong>{{ input_amount|floatformat:2 }} ريال</strong> تلقائياً على الفترات التالية:
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-success">
+                        <thead class="table-success">
+                            <tr>
+                                <th>الفترة</th>
+                                <th>التواريخ</th>
+                                <th>المستحق</th>
+                                <th>المدفوع سابقاً</th>
+                                <th>المتبقي قبل</th>
+                                <th class="table-primary">المبلغ المخصص</th>
+                                <th>المتبقي بعد</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in distribution %}
+                            <tr>
+                                <td><strong>فترة {{ item.period_number }}</strong></td>
+                                <td>
+                                    <small>{{ item.start_date|date:"Y-m-d" }}</small><br>
+                                    <small>{{ item.end_date|date:"Y-m-d" }}</small>
+                                </td>
+                                <td>{{ item.due_amount|floatformat:2 }}</td>
+                                <td>{{ item.paid_amount|floatformat:2 }}</td>
+                                <td>{{ item.remaining_before|floatformat:2 }}</td>
+                                <td class="table-primary">
+                                    <strong class="text-primary fs-5">{{ item.allocated_amount|floatformat:2 }}</strong>
+                                </td>
+                                <td>
+                                    {% if item.remaining_after == 0 %}
+                                        <span class="badge bg-success">مسدد كاملاً ✓</span>
+                                    {% else %}
+                                        {{ item.remaining_after|floatformat:2 }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="5" class="text-end">الإجمالي:</th>
+                                <th class="table-primary">
+                                    <span class="fs-5 text-primary">{{ input_amount|floatformat:2 }} ريال</span>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    جميع الفترات مسددة أو لا توجد فترات مستحقة
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- بيانات إضافية -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    بيانات إضافية (اختيارية)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.reference_number.label }}</label>
+                        {{ form.reference_number }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.check_number.label }}</label>
+                        {{ form.check_number }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.check_date.label }}</label>
+                        {{ form.check_date }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.bank_name.label }}</label>
+                        {{ form.bank_name }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.status.label }}</label>
+                        {{ form.status }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">{{ form.notes.label }}</label>
+                        {{ form.notes }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- أزرار الحفظ -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'rent:receipt_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        إلغاء
+                    </a>
+                    
+                    <div>
+                        <button type="submit" formmethod="get" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-redo"></i>
+                            تعديل البيانات
+                        </button>
+                        
+                        <button type="submit" formmethod="post" class="btn btn-success btn-lg">
+                            <i class="fas fa-check-circle"></i>
+                            تأكيد وحفظ السند
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% endif %}
+        
+    </form>
+    
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-success tbody tr:hover {
+        background-color: rgba(25, 135, 84, 0.15);
+    }
+    .card-header h5 {
+        margin-bottom: 0;
+    }
+    .invalid-feedback {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+

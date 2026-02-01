@@ -1,0 +1,242 @@
+# forms.py - ReceiptForm FINAL VERSION
+
+"""
+Receipt Form - Final Dynamic Version
+نموذج سند القبض - النسخة النهائية الديناميكية
+
+✅ بدون period_start/end/due_date
+✅ التحقق من المتبقي ديناميكياً
+"""
+
+from django import forms
+from django.utils.translation import gettext_lazy as _
+from datetime import date
+from decimal import Decimal
+
+from rent.models import Receipt, Contract
+from rent.services.contract_financial_service import ContractFinancialService
+
+
+class ReceiptForm(forms.ModelForm):
+    """
+    نموذج سند القبض - Dynamic Version
+    """
+    
+    class Meta:
+        model = Receipt
+        fields = [
+            'contract',
+            'receipt_number',
+            'receipt_date',
+            'amount',
+            'payment_method',
+            'reference_number',
+            'check_number',
+            'check_date',
+            'bank_name',
+            'payment_proof',  # صورة إثبات الدفع
+            'status',
+            'notes'
+        ]
+        
+        widgets = {
+            'contract': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'receipt_number': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'readonly': 'readonly'
+            }),
+            'receipt_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'أدخل المبلغ'
+            }),
+            'payment_method': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'reference_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'رقم الإيصال/الشيك/التحويل'
+            }),
+            'check_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'رقم الشيك'
+            }),
+            'check_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'bank_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'اسم البنك'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'ملاحظات إضافية'
+            }),
+            'payment_proof': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*,.pdf'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # عرض العقود النشطة + المنتهية + الملغاة (دون حساب مسبق للمستحقات لتفادي الأخطاء)
+        self.fields['contract'].queryset = Contract.objects.filter(
+            status__in=['active', 'expired', 'terminated'],
+            is_deleted=False
+        ).select_related('tenant').order_by('-created_at')
+        
+        # تخصيص عرض العقد
+        self.fields['contract'].label_from_instance = self.contract_label_from_instance
+        
+        # تعيين تاريخ الإيصال الافتراضي
+        if not self.instance.pk:
+            self.fields['receipt_date'].initial = date.today()
+        
+        # جعل بعض الحقول اختيارية
+        self.fields['check_number'].required = False
+        self.fields['check_date'].required = False
+        self.fields['bank_name'].required = False
+        self.fields['reference_number'].required = False
+        self.fields['payment_proof'].required = False
+        self.fields['notes'].required = False
+        
+        # تعليمات مساعدة
+        self.fields['amount'].help_text = 'سيتم توزيع المبلغ تلقائياً على الفترات غير المسددة (FIFO)'
+        self.fields['contract'].help_text = 'اختر العقد لعرض الفترات المستحقة'
+    
+    def contract_label_from_instance(self, obj):
+        """
+        تخصيص عرض العقد في القائمة المنسدلة
+        """
+        try:
+            # المعلومات الأساسية
+            label = f"{obj.contract_number} - {obj.tenant.name}"
+            
+            # إضافة الوحدة إن وجدت
+            if hasattr(obj, 'unit') and obj.unit:
+                label += f" - وحدة: {obj.unit.unit_number}"
+            
+            # إضافة المتبقي
+            try:
+                remaining = obj.get_total_remaining()
+                total_paid = obj.get_total_paid()
+                label += f" | مدفوع: {total_paid} | متبقي: {remaining}"
+            except:
+                pass
+            
+            return label
+            
+        except Exception:
+            return f"{obj.contract_number} - {obj.tenant.name}"
+    
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        contract = self.cleaned_data.get('contract')
+        
+        if contract and amount:
+            # ✅ استدعاء واحد فقط
+            service = ContractFinancialService(contract)
+            data = service.calculate_periods_with_payments()
+            remaining = data['totals']['total_remaining']
+            
+            if amount > remaining:
+                raise ValidationError(f'المبلغ أكبر من المتبقي ({remaining})')
+        
+            return amount
+            
+            return amount
+    
+    def clean(self):
+        """
+        التحقق الشامل
+        """
+        cleaned_data = super().clean()
+        
+        # التحقق من طريقة الدفع
+        payment_method = cleaned_data.get('payment_method')
+        check_number = cleaned_data.get('check_number')
+        
+        if payment_method == 'check' and not check_number:
+            self.add_error('check_number', 'رقم الشيك مطلوب عند الدفع بالشيك')
+        
+        return cleaned_data
+
+
+# ========================================
+# نماذج إضافية (بدون تغيير)
+# ========================================
+
+class ReceiptFilterForm(forms.Form):
+    """نموذج تصفية سندات القبض"""
+    
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'البحث برقم السند، العقد، أو المستأجر...'
+        })
+    )
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'جميع الحالات')] + list(Receipt._meta.get_field('status').choices),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'placeholder': 'من تاريخ'
+        })
+    )
+    
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'placeholder': 'إلى تاريخ'
+        })
+    )
+    
+    payment_method = forms.ChoiceField(
+        required=False,
+        choices=[('', 'جميع طرق الدفع')] + list(Receipt._meta.get_field('payment_method').choices),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+
+class ReceiptCancelForm(forms.Form):
+    """نموذج إلغاء سند القبض"""
+    
+    cancellation_reason = forms.CharField(
+        label='سبب الإلغاء',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'أدخل سبب إلغاء السند...',
+            'required': True
+        })
+    )
+    
+    def clean_cancellation_reason(self):
+        reason = self.cleaned_data.get('cancellation_reason')
+        if not reason or not reason.strip():
+            raise forms.ValidationError('يجب إدخال سبب الإلغاء')
+        return reason.strip()

@@ -1,0 +1,234 @@
+<!-- templates/contracts/contract_statement.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}كشف حساب - {{ contract.contract_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-file-invoice-dollar"></i>
+                كشف حساب العقد
+            </h2>
+            <p class="text-muted">
+                العقد رقم: <strong>{{ contract.contract_number }}</strong> | 
+                المستأجر: <strong>{{ contract.tenant.name }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'rent:contract_detail' contract.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-right"></i> العودة للعقد
+            </a>
+            <a href="{% url 'rent:contract_statement_print' contract.pk %}?end_date={{ end_date }}&include_future={{ include_future }}" 
+               class="btn btn-primary" target="_blank">
+                <i class="fas fa-print"></i> طباعة
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">كشف الحساب حتى تاريخ:</label>
+                    <input type="date" name="end_date" class="form-control" 
+                           value="{{ end_date|date:'Y-m-d' }}" max="{{ contract.end_date|date:'Y-m-d' }}">
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">خيارات سريعة:</label>
+                    <select class="form-select" id="quick-dates">
+                        <option value="">اختر تاريخ...</option>
+                        <option value="{{ date_options.today|date:'Y-m-d' }}">اليوم</option>
+                        <option value="{{ date_options.month_end|date:'Y-m-d' }}">نهاية الشهر</option>
+                        <option value="{{ date_options.year_end|date:'Y-m-d' }}">نهاية السنة</option>
+                        <option value="{{ date_options.contract_end|date:'Y-m-d' }}">نهاية العقد</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">الفترات المستقبلية:</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="include_future" 
+                               id="include_future" value="true" {% if include_future %}checked{% endif %}>
+                        <label class="form-check-label" for="include_future">عرض</label>
+                    </div>
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-sync"></i> تحديث
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if statement.success %}
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">إجمالي المستحق</h6>
+                    <h3>{{ statement.summary.total_debit|floatformat:2 }} ريال</h3>
+                    <small>{{ statement.summary.total_periods }} فترة</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">إجمالي المدفوع</h6>
+                    <h3>{{ statement.summary.total_credit|floatformat:2 }} ريال</h3>
+                    <small>{{ statement.summary.total_payments }} دفعة</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white {% if statement.summary.final_balance > 0 %}bg-danger{% elif statement.summary.final_balance < 0 %}bg-info{% else %}bg-secondary{% endif %}">
+                <div class="card-body">
+                    <h6 class="card-title">الرصيد النهائي</h6>
+                    <h3>{{ statement.summary.final_balance|floatformat:2 }} ريال</h3>
+                    <small>
+                        {% if statement.summary.is_overdue %}
+                            <i class="fas fa-exclamation-triangle"></i> مديونية
+                        {% elif statement.summary.is_overpaid %}
+                            <i class="fas fa-info-circle"></i> رصيد زائد
+                        {% else %}
+                            <i class="fas fa-check-circle"></i> متوازن
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">التعديلات</h6>
+                    <h3>{{ statement.summary.total_modifications }}</h3>
+                    <small>تعديل مطبق</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statement Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i>
+                تفاصيل كشف الحساب
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="10%">التاريخ</th>
+                            <th width="40%">البيان</th>
+                            <th width="15%" class="text-end">مدين (مستحق)</th>
+                            <th width="15%" class="text-end">دائن (مدفوع)</th>
+                            <th width="15%" class="text-end">الرصيد</th>
+                            <th width="5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in statement.lines %}
+                        <tr class="
+                            {% if line.type == 'period' %}table-light{% endif %}
+                            {% if line.type == 'payment' %}table-success{% endif %}
+                            {% if line.type == 'modification' %}table-warning{% endif %}
+                        ">
+                            <td>{{ line.date|date:'Y-m-d' }}</td>
+                            <td>
+                                {% if line.type == 'period' %}
+                                    <i class="fas fa-calendar-day text-primary"></i>
+                                {% elif line.type == 'payment' %}
+                                    <i class="fas fa-money-bill text-success"></i>
+                                {% elif line.type == 'modification' %}
+                                    <i class="fas fa-edit text-warning"></i>
+                                {% endif %}
+                                {{ line.description }}
+                                {% if line.reference %}
+                                    <small class="text-muted">({{ line.reference }})</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if line.debit > 0 %}
+                                    <span class="text-danger">{{ line.debit|floatformat:2 }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if line.credit > 0 %}
+                                    <span class="text-success">{{ line.credit|floatformat:2 }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <strong class="
+                                    {% if line.balance > 0 %}text-danger{% elif line.balance < 0 %}text-info{% endif %}
+                                ">
+                                    {{ line.balance|floatformat:2 }}
+                                </strong>
+                            </td>
+                            <td class="text-center">
+                                {% if line.type == 'period' and line.period_number %}
+                                    <span class="badge bg-secondary">{{ line.period_number }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <th colspan="2">الإجمالي</th>
+                            <th class="text-end">{{ statement.summary.total_debit|floatformat:2 }}</th>
+                            <th class="text-end">{{ statement.summary.total_credit|floatformat:2 }}</th>
+                            <th class="text-end">
+                                <strong>{{ statement.summary.final_balance|floatformat:2 }}</strong>
+                            </th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    
+    <!-- Error Message -->
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>خطأ:</strong> {{ statement.error }}
+    </div>
+    
+    {% endif %}
+    
+</div>
+
+<script>
+// Quick date selector
+document.getElementById('quick-dates').addEventListener('change', function() {
+    if (this.value) {
+        document.querySelector('input[name="end_date"]').value = this.value;
+    }
+});
+</script>
+
+{% endblock %}

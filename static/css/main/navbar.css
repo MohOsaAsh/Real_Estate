@@ -1,0 +1,131 @@
+/* ===============================================
+   Navbar - واجهة عصرية
+   =============================================== */
+
+#mainNavbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    height: 64px;
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    padding: 0 1.25rem;
+    border: none;
+}
+
+#mainNavbar.navbar-dark .navbar-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff !important;
+    transition: opacity 0.2s ease;
+}
+
+#mainNavbar .navbar-brand:hover {
+    opacity: 0.95;
+}
+
+#mainNavbar .navbar-brand i {
+    font-size: 1.5rem;
+    opacity: 0.95;
+}
+
+/* Nav links */
+#mainNavbar .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+#mainNavbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff !important;
+}
+
+/* Dropdown */
+#mainNavbar .dropdown-menu {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    margin-top: 0.5rem;
+    min-width: 220px;
+    padding: 0.5rem;
+}
+
+#mainNavbar .dropdown-item {
+    padding: 0.6rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+#mainNavbar .dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+#mainNavbar .dropdown-item.text-danger:hover {
+    background: #fee2e2;
+}
+
+#mainNavbar .dropdown-item i {
+    width: 20px;
+    margin-left: 0.5rem;
+}
+
+/* Notification badge */
+#mainNavbar .badge {
+    font-size: 0.65rem;
+    padding: 0.2em 0.5em;
+}
+
+.notification-dropdown {
+    min-width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-dropdown .dropdown-header {
+    font-weight: 600;
+    color: #374151;
+    padding: 0.75rem 1rem;
+}
+
+/* User dropdown */
+#userDropdown {
+    font-weight: 600;
+}
+
+#userDropdown i.fa-user-circle {
+    font-size: 1.5rem;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    #mainNavbar {
+        height: 56px;
+        padding: 0 1rem;
+    }
+    
+    #mainNavbar .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    #mainNavbar .navbar-brand span {
+        display: none;
+    }
+    
+    #mainNavbar .nav-link {
+        padding: 0.75rem 1rem;
+    }
+    
+    #mainNavbar .navbar-collapse {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+}

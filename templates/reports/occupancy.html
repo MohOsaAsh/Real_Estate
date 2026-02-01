@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تقرير معدل الإشغال{% endblock %}
+
+{% block page_title %}تقرير معدل الإشغال{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary" onclick="window.print()">
+    <i class="fas fa-print"></i> طباعة
+</button>
+{% if perms.rent.export_reports %}
+<button class="btn btn-success" onclick="exportToPDF()">
+    <i class="fas fa-file-pdf"></i> تصدير PDF
+</button>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Overall Statistics -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> الإحصائيات العامة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="text-muted small">إجمالي الوحدات</div>
+                            <div class="fw-bold fs-2 text-primary">{{ total_units }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="text-muted small">معدل الإشغال</div>
+                            <div class="fw-bold fs-2 text-success">{{ occupancy_rate|floatformat:1 }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="text-muted small">مؤجرة</div>
+                            <div class="fw-bold fs-3 text-success">{{ rented_units }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="text-muted small">متاحة</div>
+                            <div class="fw-bold fs-3 text-info">{{ available_units }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="text-muted small">صيانة</div>
+                            <div class="fw-bold fs-3 text-warning">{{ maintenance_units }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-box">
+                            <div class="text-muted small">مجمدة</div>
+                            <div class="fw-bold fs-3 text-secondary">{{ frozen_units }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-doughnut"></i> توزيع الوحدات</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Occupancy Gauge -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4">
+                <h5 class="mb-4">مقياس الإشغال</h5>
+                <div class="occupancy-gauge" data-percentage="{{ occupancy_rate|floatformat:1 }}">
+                    <svg width="250" height="250" viewBox="0 0 250 250">
+                        <circle class="bg-circle" cx="125" cy="125" r="100"></circle>
+                        <circle class="progress-circle" cx="125" cy="125" r="100"></circle>
+                    </svg>
+                    <div class="occupancy-text">
+                        <div class="value">{{ occupancy_rate|floatformat:1 }}</div>
+                        <div class="label">معدل الإشغال</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Building Statistics -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-building"></i> إحصائيات المباني</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>المبنى</th>
+                        <th>إجمالي الوحدات</th>
+                        <th>مؤجرة</th>
+                        <th>متاحة</th>
+                        <th>معدل الإشغال</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in building_stats %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ stat.building_name }}</div>
+                            <small class="text-muted">{{ stat.building.get_building_type_display }}</small>
+                        </td>
+                        <td class="fw-bold">{{ stat.total }}</td>
+                        <td class="text-success">{{ stat.rented }}</td>
+                        <td class="text-info">{{ stat.available }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 20px;">
+                                    <div class="progress-bar {% if stat.rate >= 80 %}bg-success{% elif stat.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ stat.rate }}%">
+                                        {{ stat.rate|floatformat:1 }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if stat.rate >= 80 %}
+                            <span class="badge bg-success">ممتاز</span>
+                            {% elif stat.rate >= 60 %}
+                            <span class="badge bg-info">جيد</span>
+                            {% elif stat.rate >= 40 %}
+                            <span class="badge bg-warning">متوسط</span>
+                            {% else %}
+                            <span class="badge bg-danger">ضعيف</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Cards for Buildings -->
+<div class="row g-4">
+    {% for stat in building_stats %}
+    <div class="col-lg-4 col-md-6">
+        <div class="building-stat-card" data-occupancy-rate="{{ stat.rate|floatformat:1 }}">
+            <div class="building-name">{{ stat.building_name }}</div>
+            <div class="stat-row">
+                <span class="text-muted">إجمالي الوحدات:</span>
+                <span class="fw-bold">{{ stat.total }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="text-muted">مؤجرة:</span>
+                <span class="fw-bold text-success">{{ stat.rented }}</span>
+            </div>
+            <div class="stat-row">
+                <span class="text-muted">متاحة:</span>
+                <span class="fw-bold text-info">{{ stat.available }}</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress" style="height: 12px;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="fw-bold fs-5">{{ stat.rate|floatformat:1 }}%</span>
+                    <small class="text-muted d-block">معدل الإشغال</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/reports.css' %}" rel="stylesheet">
+<style>
+.stat-box {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: var(--light-color);
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Chart Data
+window.occupancyChartData = {
+    labels: {{ chart_data.labels|safe }},
+    values: {{ chart_data.values|safe }}
+};
+
+console.log('📊 Occupancy chart data defined:', window.occupancyChartData);
+</script>
+
+<!-- Reports JS -->
+<script src="{% static 'js/reports.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize occupancy gauge
+    var $gauge = $('.occupancy-gauge');
+    var percentage = parseFloat($gauge.data('percentage')) || 0;
+    var $circle = $gauge.find('.progress-circle');
+    
+    var radius = 100;
+    var circumference = 2 * Math.PI * radius;
+    var offset = circumference - (percentage / 100) * circumference;
+    
+    $circle.css({
+        'stroke-dasharray': circumference,
+        'stroke-dashoffset': circumference
+    });
+    
+    setTimeout(function() {
+        $circle.css({
+            'stroke-dashoffset': offset,
+            'transition': 'stroke-dashoffset 1.5s ease'
+        });
+    }, 500);
+    
+    // Update color
+    var color;
+    if (percentage >= 80) {
+        color = '#198754';
+    } else if (percentage >= 50) {
+        color = '#ffc107';
+    } else {
+        color = '#dc3545';
+    }
+    $circle.css('stroke', color);
+});
+</script>
+{% endblock %}

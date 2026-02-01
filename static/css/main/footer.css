@@ -1,0 +1,33 @@
+/* ===============================================
+   Footer - واجهة عصرية
+   =============================================== */
+
+.footer {
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -1px 3px 0 rgb(0 0 0 / 0.05);
+    margin-top: auto;
+    padding: 1.25rem 0;
+}
+
+.footer p {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.footer a {
+    color: #6b7280;
+    transition: color 0.2s ease;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    color: #4f46e5;
+}
+
+@media (max-width: 768px) {
+    .footer { padding: 1rem 0; }
+    .footer p { font-size: 0.8125rem; }
+    .footer .col-md-6:first-child { margin-bottom: 0.5rem; }
+}

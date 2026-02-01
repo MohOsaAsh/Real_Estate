@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}قائمة الوحدات{% endblock %}
+
+{% block page_title %}إدارة الوحدات{% endblock %}
+
+
+
+{% block page_actions %}
+{% if perms.rent.add_unit %}
+<a href="{% url 'rent:unit_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> وحدة جديدة
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">بحث</label>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="رقم الوحدة أو المبنى" 
+                       value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">الحالة</label>
+                <select name="status" class="form-select">
+                    <option value="">الكل</option>
+                    <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>متاحة</option>
+                    <option value="rented" {% if request.GET.status == 'rented' %}selected{% endif %}>مؤجرة</option>
+                    <option value="frozen" {% if request.GET.status == 'frozen' %}selected{% endif %}>مجمدة</option>
+                    <option value="maintenance" {% if request.GET.status == 'maintenance' %}selected{% endif %}>صيانة</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">المبنى</label>
+                <select name="building" class="form-select">
+                    <option value="">الكل</option>
+                    <!-- سيتم ملؤها من Backend -->
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> بحث
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Units Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        {% if units %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الوحدة</th>
+                        <th>المبنى</th>
+                        <th>الطابق</th>
+                        <th>المساحة</th>
+                        <th>الغرف</th>
+                        <th>الحمامات</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for unit in units %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'rent:unit_detail' unit.pk %}" class="fw-bold">
+                               {{ unit.get_unit_type_display }}  {{ unit.unit_number }}  {{ unit.building.name }} 
+                            </a>
+                        </td>
+                        <td>
+                            <div>{{ unit.building.name }}</div>
+                            <small class="text-muted">{{ unit.building.land.name }}</small>
+                        </td>
+                        <td>{{ unit.floor }}</td>
+                        <td>{{ unit.area|floatformat:2 }} م²</td>
+                        <td>{{ unit.rooms_count }}</td>
+                        <td>{{ unit.bathrooms_count }}</td>
+                        <td>
+                            {% if unit.status == 'available' %}
+                            <span class="badge bg-success">متاحة</span>
+                            {% elif unit.status == 'rented' %}
+                            <span class="badge bg-info badge-red">مؤجرة</span>
+                            {% elif unit.status == 'frozen' %}
+                            <span class="badge bg-secondary">مجمدة</span>
+                            {% elif unit.status == 'maintenance' %}
+                            <span class="badge bg-warning">صيانة</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'rent:unit_detail' unit.pk %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if perms.rent.change_unit %}
+                                <a href="{% url 'rent:unit_update' unit.pk %}"
+                                   class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if unit.status == 'available' and perms.rent.add_contract %}
+                                <a href="{% url 'rent:contract_create' %}?unit={{ unit.pk }}"
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-file-contract"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="p-3">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">السابقة</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">التالية</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-home fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد وحدات</h5>
+            {% if perms.rent.add_unit %}
+            <a href="{% url 'rent:unit_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> وحدة جديدة
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/units.css' %}" rel="stylesheet">
+<style>
+   .badge-red {
+  background-color: red !important;
+}
+
+</style>
+
+{% endblock %}

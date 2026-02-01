@@ -1,0 +1,211 @@
+<!-- templates/contracts/contract_statement_print.html -->
+
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>كشف حساب - {{ contract.contract_number }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            direction: rtl;
+            margin: 20px;
+            font-size: 12px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 5px 0;
+            font-size: 24px;
+        }
+        .info-section {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        th {
+            background-color: #343a40;
+            color: white;
+        }
+        .period-row {
+            background-color: #f8f9fa;
+        }
+        .payment-row {
+            background-color: #d4edda;
+        }
+        .modification-row {
+            background-color: #fff3cd;
+        }
+        .total-row {
+            background-color: #343a40;
+            color: white;
+            font-weight: bold;
+        }
+        .text-end {
+            text-align: left;
+        }
+        .text-danger {
+            color: #dc3545;
+        }
+        .text-success {
+            color: #28a745;
+        }
+        .summary-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>كشف حساب العقد</h1>
+    <h3>{{ contract.contract_number }}</h3>
+</div>
+
+<div class="info-section">
+    <div class="info-row">
+        <strong>المستأجر:</strong>
+        <span>{{ contract.tenant.name }}</span>
+    </div>
+    <div class="info-row">
+        <strong>فترة العقد:</strong>
+        <span>من {{ contract.start_date }} إلى {{ contract.end_date }}</span>
+    </div>
+    <div class="info-row">
+        <strong>كشف الحساب حتى:</strong>
+        <span>{{ end_date }}</span>
+    </div>
+    <div class="info-row">
+        <strong>تاريخ الطباعة:</strong>
+        <span>{{ print_date }}</span>
+    </div>
+</div>
+
+{% if statement.success %}
+
+<table>
+    <thead>
+        <tr>
+            <th width="10%">التاريخ</th>
+            <th width="35%">البيان</th>
+            <th width="15%" class="text-end">مدين</th>
+            <th width="15%" class="text-end">دائن</th>
+            <th width="15%" class="text-end">الرصيد</th>
+            <th width="10%">المرجع</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for line in statement.lines %}
+        <tr class="
+            {% if line.type == 'period' %}period-row{% endif %}
+            {% if line.type == 'payment' %}payment-row{% endif %}
+            {% if line.type == 'modification' %}modification-row{% endif %}
+        ">
+            <td>{{ line.date|date:'Y-m-d' }}</td>
+            <td>{{ line.description }}</td>
+            <td class="text-end">
+                {% if line.debit > 0 %}
+                    {{ line.debit|floatformat:2 }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td class="text-end">
+                {% if line.credit > 0 %}
+                    {{ line.credit|floatformat:2 }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td class="text-end">{{ line.balance|floatformat:2 }}</td>
+            <td>{{ line.reference|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr class="total-row">
+            <th colspan="2">الإجمالي</th>
+            <th class="text-end">{{ statement.summary.total_debit|floatformat:2 }}</th>
+            <th class="text-end">{{ statement.summary.total_credit|floatformat:2 }}</th>
+            <th class="text-end">{{ statement.summary.final_balance|floatformat:2 }}</th>
+            <th></th>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="summary-box">
+    <h4 style="margin-top: 0;">الملخص المالي:</h4>
+    <div class="info-row">
+        <strong>إجمالي المستحق (مدين):</strong>
+        <span>{{ statement.summary.total_debit|floatformat:2 }} ريال</span>
+    </div>
+    <div class="info-row">
+        <strong>إجمالي المدفوع (دائن):</strong>
+        <span>{{ statement.summary.total_credit|floatformat:2 }} ريال</span>
+    </div>
+    <div class="info-row" style="border-top: 2px solid #000; padding-top: 10px; margin-top: 10px;">
+        <strong>الرصيد النهائي:</strong>
+        <strong class="{% if statement.summary.final_balance > 0 %}text-danger{% elif statement.summary.final_balance < 0 %}text-success{% endif %}">
+            {{ statement.summary.final_balance|floatformat:2 }} ريال
+        </strong>
+    </div>
+    
+    {% if statement.summary.is_overdue %}
+    <p style="color: #dc3545; margin: 10px 0 0 0;">
+        ⚠️ يوجد مديونية متبقية يجب تحصيلها
+    </p>
+    {% elif statement.summary.is_overpaid %}
+    <p style="color: #17a2b8; margin: 10px 0 0 0;">
+        ℹ️ يوجد رصيد زائد للمستأجر
+    </p>
+    {% else %}
+    <p style="color: #28a745; margin: 10px 0 0 0;">
+        ✅ الحساب متوازن
+    </p>
+    {% endif %}
+</div>
+
+{% else %}
+
+<div class="alert alert-danger">
+    خطأ: {{ statement.error }}
+</div>
+
+{% endif %}
+
+<div class="no-print" style="text-align: center; margin-top: 30px;">
+    <button onclick="window.print()" style="padding: 10px 30px; font-size: 16px;">طباعة</button>
+    <button onclick="window.close()" style="padding: 10px 30px; font-size: 16px;">إغلاق</button>
+</div>
+
+</body>
+</html>

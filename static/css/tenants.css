@@ -1,0 +1,250 @@
+/* ========================================
+   Tenants Styles
+   ======================================== */
+
+.tenant-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.tenant-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.tenant-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Avatar Styles */
+.avatar-circle.avatar-lg {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+}
+
+.avatar-circle.avatar-sm {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+}
+
+/* Tenant Info */
+.tenant-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.tenant-info .info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.tenant-info .info-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Card Footer */
+.tenant-card .card-footer {
+    padding: 0.75rem 1.5rem;
+}
+
+.tenant-card .btn-group {
+    box-shadow: none;
+}
+
+.tenant-card .btn-group .btn {
+    flex: 1;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+}
+
+/* Tenant Detail Page */
+.tenant-detail-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.tenant-detail-header .avatar-circle {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid white;
+}
+
+/* Documents Section */
+.document-item {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: var(--light-color);
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.document-item:hover {
+    background-color: #e9ecef;
+    transform: translateX(-5px);
+}
+
+.document-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.document-icon.pdf {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--danger-color);
+}
+
+.document-icon.image {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: var(--primary-color);
+}
+
+.document-icon.doc {
+    background-color: rgba(13, 202, 240, 0.1);
+    color: var(--info-color);
+}
+
+/* Contracts Timeline */
+.contracts-timeline {
+    position: relative;
+    padding-right: 30px;
+}
+
+.contracts-timeline::before {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--light-color);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    right: -22px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.timeline-item.active::before {
+    background-color: var(--success-color);
+    box-shadow: 0 0 0 2px var(--success-color);
+}
+
+.timeline-item.terminated::before {
+    background-color: var(--danger-color);
+    box-shadow: 0 0 0 2px var(--danger-color);
+}
+
+/* Statistics Cards */
+.tenant-stats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
+.tenant-stats .stat-item {
+    text-align: center;
+}
+
+.tenant-stats .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+
+.tenant-stats .stat-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+/* Form Styles */
+.tenant-form .form-section {
+    background-color: var(--light-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.tenant-form .form-section h5 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* File Upload Area */
+.file-upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.file-upload-area.dragover {
+    border-color: var(--success-color);
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+.file-upload-area i {
+    font-size: 3rem;
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tenant-card .avatar-circle.avatar-lg {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    .tenant-detail-header {
+        padding: 1.5rem;
+    }
+    
+    .tenant-detail-header .avatar-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .tenant-stats .stat-value {
+        font-size: 1.5rem;
+    }
+}

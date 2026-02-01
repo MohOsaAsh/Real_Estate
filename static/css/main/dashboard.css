@@ -1,0 +1,180 @@
+/* ===============================================
+   Dashboard - واجهة عصرية
+   =============================================== */
+
+/* Stat cards */
+.stat-card {
+    transition: all 0.25s ease;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    height: 100%;
+    background: #fff;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border-color: #e5e7eb;
+}
+
+.stat-card .card-body {
+    padding: 1.5rem;
+}
+
+.stat-card h6 {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.stat-card h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.stat-card small {
+    font-size: 0.8125rem;
+    color: #6b7280;
+}
+
+/* Icon box */
+.icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-box.bg-primary,
+.icon-box.bg-primary.bg-gradient {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.icon-box.bg-success,
+.icon-box.bg-success.bg-gradient {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+}
+
+.icon-box.bg-warning,
+.icon-box.bg-warning.bg-gradient {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+
+.icon-box.bg-danger,
+.icon-box.bg-danger.bg-gradient {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+}
+
+.icon-box i {
+    font-size: 1.5rem !important;
+}
+
+/* Quick actions */
+.quick-action-btn {
+    transition: all 0.25s ease;
+    text-decoration: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: #fff;
+    font-weight: 600;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    border-color: #4f46e5;
+    background: #faf5ff;
+}
+
+.quick-action-btn i {
+    transition: transform 0.25s ease;
+}
+
+.quick-action-btn:hover i {
+    transform: scale(1.1);
+}
+
+.quick-action-btn span {
+    font-size: 0.9375rem;
+}
+
+/* Card sections */
+.card.border-0.shadow-sm .card-header {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+}
+
+.card.border-0.shadow-sm .card-header .card-title {
+    font-size: 1rem;
+}
+
+/* Tables on dashboard */
+.table thead th {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+}
+
+/* Animations */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-card {
+    animation: slideUp 0.4s ease;
+    animation-fill-mode: both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .stat-card h2 { font-size: 1.5rem; }
+    .icon-box { width: 48px; height: 48px; }
+    .icon-box i { font-size: 1.25rem !important; }
+    .quick-action-btn { min-height: 120px; }
+    .quick-action-btn i { font-size: 1.5rem !important; }
+    .quick-action-btn span { font-size: 0.875rem; }
+}
+
+@media (max-width: 576px) {
+    .stat-card .card-body { padding: 1.25rem; }
+    .quick-action-btn { min-height: 100px; }
+}
+
+/* Print */
+@media print {
+    .stat-card, .quick-action-btn, .card { break-inside: avoid; }
+    .quick-action-btn { display: none; }
+    .btn { display: none; }
+}

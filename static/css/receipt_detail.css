@@ -1,0 +1,271 @@
+/* receipt_detail.css */
+
+/* Info Box Styles */
+.info-box {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.info-box:hover {
+    background: #e9ecef;
+    transform: translateX(-5px);
+}
+
+.info-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex-grow: 1;
+}
+
+.info-content small {
+    display: block;
+    margin-bottom: 3px;
+}
+
+/* Background Colors */
+.bg-purple {
+    background-color: #6f42c1;
+}
+
+/* Contract Information */
+.contract-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+/* Period Box */
+.period-box {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.period-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.period-box i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+/* Status Badge */
+.status-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.status-badge {
+    padding: 20px;
+}
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 30px;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    padding-right: 70px;
+    margin-bottom: 30px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-icon {
+    position: absolute;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.timeline-content small {
+    color: #6c757d;
+}
+
+.timeline-content p {
+    margin: 5px 0;
+}
+
+/* Alert Styles */
+.alert-danger {
+    border-radius: 8px;
+}
+
+.alert-heading {
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 20px;
+}
+
+.card-header h5,
+.card-header h6 {
+    margin: 0;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Button Styles */
+.btn-group .btn {
+    white-space: nowrap;
+}
+
+.d-grid .btn {
+    text-align: right;
+    justify-content: flex-start;
+}
+
+.d-grid .btn i {
+    margin-left: 8px;
+}
+
+/* Late Payment Alert */
+.border-danger {
+    border: 2px solid #dc3545 !important;
+}
+
+/* Notes Section */
+.card-body p {
+    line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-box {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .info-icon {
+        margin-left: 0;
+        margin-bottom: 10px;
+    }
+    
+    .timeline::before {
+        right: 15px;
+    }
+    
+    .timeline-item {
+        padding-right: 50px;
+    }
+    
+    .timeline-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .status-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .status-icon i {
+        font-size: 2rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .btn,
+    .card-header,
+    .page-actions {
+        display: none !important;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.3s ease-out;
+}

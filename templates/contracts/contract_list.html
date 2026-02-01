@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}قائمة العقود{% endblock %}
+
+{% block page_title %}إدارة العقود{% endblock %}
+
+{% block page_actions %}
+{% if perms.rent.add_contract %}
+<a href="{% url 'rent:contract_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> عقد جديد
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter -->
+<div class="card border-4 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">بحث</label>
+                <input type="text" name="search" class="form-control" placeholder="رقم العقد أو اسم المستأجر" value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">الحالة</label>
+                <select name="status" class="form-select">
+                    <option value="">الكل</option>
+                    <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>مسودة</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>نشط</option>
+                    <option value="terminated" {% if request.GET.status == 'terminated' %}selected{% endif %}>منتهي</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>ملغي</option>
+                    <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>منتهي الصلاحية</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid gap-2 d-md-flex">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                    <a href="{% url 'rent:contract_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> إعادة تعيين
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Contracts Table -->
+<div class="card border-4 shadow-sm">
+    <div class="card-body">
+        {% if contracts %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم العقد</th>
+                        <th>- رقم الهاتف -المستأجر</th>
+                        <th>الوحدات</th>
+                        <th>تاريخ البداية</th>
+                        <th>تاريخ النهاية</th>
+                        <th>قيمة الإيجار</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contract in contracts %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'rent:contract_detail' contract.pk %}" class="text-decoration-none">
+                                {{ contract.contract_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2">
+                                    {{ contract.tenant.name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <div>{{ contract.tenant.name }}</div>
+                                    <small class="text-muted">{{ contract.tenant.phone }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% for unit in contract.units.all %}
+                            <span class="badge bg-secondary">{{ unit.unit_number }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ contract.start_date }}</td>
+                        <td>{{ contract.end_date }}</td>
+                        <td>{{ contract.annual_rent|floatformat:2 }} ريال</td>
+                        <td>
+                            {% if contract.status == 'draft' %}
+                            <span class="badge bg-secondary">مسودة</span>
+                            {% elif contract.status == 'active' %}
+                            <span class="badge bg-success">نشط</span>
+                            {% elif contract.status == 'terminated' %}
+                            <span class="badge bg-danger">منتهي</span>
+                            {% elif contract.status == 'cancelled' %}
+                            <span class="badge bg-warning">ملغي</span>
+                            {% elif contract.status == 'expired' %}
+                            <span class="badge bg-dark">منتهي الصلاحية</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'rent:contract_detail' contract.pk %}" class="btn btn-sm btn-outline-primary" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if perms.rent.change_contract %}
+                                <a href="{% url 'rent:contract_update' contract.pk %}" class="btn btn-sm btn-outline-warning" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.rent.view_contract_statement %}
+                                <a href="{% url 'rent:contract_statement' contract.pk %}" class="btn btn-sm btn-success" title="كشف الحساب">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </a>
+                                {% endif %}
+                                {% if contract.status == 'draft' and perms.rent.activate_contract %}
+                                <form method="post" action="{% url 'rent:contract_activate' contract.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="تفعيل">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                        
+                            
+                       
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">الأولى</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">السابقة</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">التالية</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">الأخيرة</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد عقود</h5>
+            <p class="text-muted">ابدأ بإضافة عقد جديد</p>
+            {% if perms.rent.add_contract %}
+            <a href="{% url 'rent:contract_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> عقد جديد
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/contracts.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/contracts.js' %}"></script>
+{% endblock %}

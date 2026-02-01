@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}كشف حساب جميع العقود{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contract-card {
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+        border-left: 5px solid #667eea;
+    }
+    
+    .contract-card:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .contract-card.has-overdue {
+        border-left-color: #dc3545;
+    }
+    
+    .contract-card.fully-paid {
+        border-left-color: #28a745;
+    }
+    
+    .summary-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-file-invoice-dollar"></i>
+            كشف حساب جميع العقود
+        </h2>
+        <div class="btn-group no-print">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> طباعة
+            </button>
+            <button class="btn btn-success" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> Excel
+            </button>
+        </div>
+    </div>
+    
+    <!-- الفلاتر -->
+    <div class="card mb-4 no-print">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">حالة العقد</label>
+                    <select name="status" class="form-select">
+                        <option value="">الكل</option>
+                        <option value="active" {% if status == 'active' %}selected{% endif %}>نشط</option>
+                        <option value="expired" {% if status == 'expired' %}selected{% endif %}>منتهي</option>
+                        <option value="suspended" {% if status == 'suspended' %}selected{% endif %}>معلق</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">عرض</label>
+                    <select name="exclude_zero" class="form-select">
+                        <option value="true" {% if exclude_zero %}selected{% endif %}>العقود ذات المديونية فقط</option>
+                        <option value="false" {% if not exclude_zero %}selected{% endif %}>جميع العقود</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary d-block w-100">
+                        <i class="fas fa-search"></i> فلترة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- الملخص الإجمالي -->
+    <div class="summary-box">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ total_contracts }}</h3>
+                <p class="mb-0">عقد</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ summary.total_due|floatformat:0 }}</h3>
+                <p class="mb-0">إجمالي المستحق (ريال)</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ summary.total_paid|floatformat:0 }}</h3>
+                <p class="mb-0">إجمالي المدفوع (ريال)</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ summary.total_remaining|floatformat:0 }}</h3>
+                <p class="mb-0">إجمالي المتبقي (ريال)</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- قائمة العقود -->
+    <div class="row">
+        {% for result in results %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card contract-card {% if result.total_remaining > 0 %}has-overdue{% else %}fully-paid{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'contract_statement' result.contract_id %}">
+                            {{ result.contract_number }}
+                        </a>
+                    </h5>
+                    <p class="text-muted mb-2">
+                        <i class="fas fa-user"></i>
+                        {{ result.tenant }}
+                    </p>
+                    
+                    <hr>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted d-block">المستحق</small>
+                            <strong>{{ result.total_due|floatformat:0 }}</strong>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">المدفوع</small>
+                            <strong class="text-success">{{ result.total_paid|floatformat:0 }}</strong>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">المتبقي</small>
+                            <strong class="text-danger">{{ result.total_remaining|floatformat:0 }}</strong>
+                        </div>
+                    </div>
+                    
+                    {% if result.summary %}
+                    <hr>
+                    <div class="d-flex justify-content-between text-sm">
+                        <span>
+                            <i class="fas fa-check-circle text-success"></i>
+                            {{ result.summary.paid_periods }} مسددة
+                        </span>
+                        <span>
+                            <i class="fas fa-exclamation-triangle text-danger"></i>
+                            {{ result.summary.overdue_periods }} متأخرة
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'contract_statement' result.contract_id %}" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="fas fa-eye"></i> عرض التفاصيل
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                <h5>لا توجد عقود</h5>
+                <p class="mb-0">جرب تغيير الفلاتر</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportToExcel() {
+    // إعداد البيانات
+    const data = [
+        ['رقم العقد', 'المستأجر', 'المستحق', 'المدفوع', 'المتبقي'],
+        {% for result in results %}
+        [
+            '{{ result.contract_number }}',
+            '{{ result.tenant }}',
+            {{ result.total_due }},
+            {{ result.total_paid }},
+            {{ result.total_remaining }}
+        ],
+        {% endfor %}
+    ];
+    
+    // إنشاء workbook
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'كشف العقود');
+    
+    // تصدير
+    XLSX.writeFile(wb, 'all_contracts_statement.xlsx');
+}
+</script>
+{% endblock %}

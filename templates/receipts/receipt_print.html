@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}طباعة سند قبض {{ receipt.receipt_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <!-- أزرار الطباعة -->
+    <div class="row mb-3 no-print">
+        <div class="col-12 text-end">
+            <button onclick="window.print()" class="btn btn-primary btn-lg">
+                <i class="fas fa-print"></i>
+                طباعة
+            </button>
+            <a href="{% url 'rent:receipt_detail' receipt.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                رجوع
+            </a>
+        </div>
+    </div>
+    
+    <!-- محتوى السند -->
+    <div class="receipt-container">
+        
+        <!-- الهيدر -->
+        <div class="receipt-header text-center mb-5">
+            <h1 class="display-4 fw-bold">سند قبض</h1>
+            <h2 class="text-primary">Payment Receipt</h2>
+        </div>
+        
+        <!-- معلومات السند والمستأجر -->
+        <div class="row mb-5">
+            <div class="col-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <td class="fw-bold" style="width: 40%">رقم السند:</td>
+                        <td class="fs-5">{{ receipt.receipt_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">التاريخ:</td>
+                        <td>{{ receipt.receipt_date|date:"Y-m-d" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">طريقة الدفع:</td>
+                        <td>{{ receipt.get_payment_method_display }}</td>
+                    </tr>
+                    {% if receipt.reference_number %}
+                    <tr>
+                        <td class="fw-bold">رقم المرجع:</td>
+                        <td>{{ receipt.reference_number }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+            <div class="col-6 text-end">
+                <table class="table table-borderless">
+                    <tr>
+                        <td class="fw-bold" style="width: 40%">المستأجر:</td>
+                        <td class="fs-5">{{ receipt.contract.tenant.name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">رقم العقد:</td>
+                        <td>{{ receipt.contract.contract_number }}</td>
+                    </tr>
+                    {% if unit %}
+                    <tr>
+                        <td class="fw-bold">الوحدة:</td>
+                        <td>{{ unit.unit_number }}</td>
+                    </tr>
+                    {% endif %}
+
+
+                {% if building %}
+                <tr>
+                    <td class="fw-bold">الوحدة:</td>
+                    <p>المبنى: {{ building.name }}</p>
+                    </tr>
+                {% endif %}
+
+                </table>
+            </div>
+        </div>
+        
+        <hr class="my-4">
+        
+        <!-- البيان - الفترات المغطاة -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h4 class="mb-4 fw-bold">البيان:</h4>
+                
+                {% if covered_periods %}
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 8%">م</th>
+                            <th style="width: 52%">الوصف</th>
+                            <th style="width: 20%">الفترة</th>
+                            <th style="width: 20%" class="text-end">المبلغ (ريال)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for period in covered_periods %}
+                        <tr>
+                            <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ period.description }}</strong>
+                                <br>
+                                <small class="text-muted">ايجار الورشه {{ unit.unit_number }} </small>
+                                {% comment %}{{ period.period_number }}  {% endcomment %}
+                            </td>
+                            <td>
+                                <small> من تاريخ: {{ period.start_date|date:"Y-m-d" }} </small>
+                                <br>
+                                <small> الي تاريخ: {{ period.end_date|date:"Y-m-d" }} </small>
+                            </td>
+                            <td class="text-end">{{ period.allocated_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="3" class="text-end fs-5">الإجمالي:</th>
+                            <th class="text-end">
+                                <span class="fs-4 text-success fw-bold">
+                                    {{ receipt.amount|floatformat:2 }} ريال
+                                </span>
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    لا توجد تفاصيل للفترات المغطاة
+                </div>
+                <div class="p-3 bg-light border">
+                    <p class="mb-0 fs-5">
+                        <strong>المبلغ الإجمالي:</strong>
+                        <span class="text-success fw-bold">{{ receipt.amount|floatformat:2 }} ريال</span>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- ملاحظات -->
+        {% if receipt.notes %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="fw-bold">ملاحظات:</h5>
+                <div class="p-3 border bg-light">
+                    {{ receipt.notes }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- تفاصيل الدفع الإضافية -->
+        {% if receipt.check_number or receipt.bank_name %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="fw-bold">تفاصيل الدفع:</h5>
+                <table class="table table-sm table-borderless">
+                    {% if receipt.check_number %}
+                    <tr>
+                        <td style="width: 30%" class="fw-bold">رقم الشيك:</td>
+                        <td>{{ receipt.check_number }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if receipt.check_date %}
+                    <tr>
+                        <td class="fw-bold">تاريخ الشيك:</td>
+                        <td>{{ receipt.check_date|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if receipt.bank_name %}
+                    <tr>
+                        <td class="fw-bold">اسم البنك:</td>
+                        <td>{{ receipt.bank_name }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <hr class="my-5">
+        
+        <!-- التوقيعات -->
+        <div class="row mt-5 pt-5">
+            <div class="col-4 text-center">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <p class="mt-3 mb-1 fw-bold">المستلم</p>
+                    <small class="text-muted">
+                        {% if receipt.created_by %}
+                            {{ receipt.created_by.get_full_name|default:receipt.created_by.username }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <p class="mt-3 mb-1 fw-bold">المراجع</p>
+                    <small class="text-muted">&nbsp;</small>
+                </div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <p class="mt-3 mb-1 fw-bold">المعتمد</p>
+                    <small class="text-muted">&nbsp;</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الفوتر -->
+        <div class="row mt-5 pt-4">
+            <div class="col-12 text-center">
+                <hr>
+                <small class="text-muted">
+                    طُبع في: {{ now|date:"Y-m-d H:i" }}
+                    {% if receipt.status == 'posted' %}
+                        | الحالة: <strong class="text-success">مرحل</strong>
+                    {% elif receipt.status == 'draft' %}
+                        | الحالة: <strong class="text-warning">مسودة</strong>
+                    {% elif receipt.status == 'cancelled' %}
+                        | الحالة: <strong class="text-danger">ملغي</strong>
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        
+    </div>
+    
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* أنماط الطباعة */
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        body {
+            background: white;
+        }
+        
+        .receipt-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20mm;
+        }
+        
+        .table {
+            page-break-inside: avoid;
+        }
+        
+        h1, h2, h3, h4, h5 {
+            page-break-after: avoid;
+        }
+        
+        .signature-box {
+            page-break-inside: avoid;
+        }
+    }
+    
+    /* أنماط العرض */
+    .receipt-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 60px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+    
+    .receipt-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .receipt-header h2 {
+        font-size: 1.8rem;
+        font-weight: 400;
+    }
+    
+    .signature-box {
+        margin-top: 50px;
+    }
+    
+    .signature-line {
+        border-top: 2px solid #000;
+        width: 70%;
+        margin: 0 auto;
+        margin-top: 70px;
+    }
+    
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6 !important;
+        padding: 12px;
+    }
+    
+    .table thead {
+        background-color: #f8f9fa;
+    }
+    
+    @page {
+        size: A4;
+        margin: 15mm;
+    }
+    
+    @media screen {
+        .receipt-container {
+            min-height: 297mm;
+        }
+    }
+</style>
+{% endblock %}

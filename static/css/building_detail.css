@@ -1,0 +1,134 @@
+/* building_detail.css */
+
+/* Info Box Styles */
+.info-box {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.info-box:hover {
+    background: #e9ecef;
+    transform: translateX(-5px);
+}
+
+.info-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex-grow: 1;
+}
+
+/* Custom Background Colors */
+.bg-purple {
+    background-color: #6f42c1;
+}
+
+.bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.1);
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-warning-subtle {
+    background-color: rgba(255, 193, 7, 0.1);
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-primary-subtle {
+    background-color: rgba(13, 110, 253, 0.1);
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Status Icon Styles */
+.status-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin: 0 auto;
+}
+
+/* Statistics Item Styles */
+.stat-item {
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 0 -10px;
+}
+
+/* Progress Bar Styles */
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    font-weight: bold;
+    transition: width 1s ease;
+}
+
+/* Card Styles */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Revenue Item Styles */
+.revenue-item {
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+}
+
+/* Table Styles */
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+}
+
+/* History Icon Styles */
+.history-icon {
+    font-size: 1.5rem;
+}

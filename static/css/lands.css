@@ -1,0 +1,85 @@
+/* ========================================
+   Lands Styles
+   ======================================== */
+
+
+.form-section {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.section-title {
+    color: #0d6efd;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+
+.land-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.land-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.land-card .card-body {
+    padding: 1.5rem;
+}
+
+.land-icon {
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.land-card:hover .land-icon {
+    opacity: 0.8;
+}
+
+.land-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.land-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.land-info .info-row:last-child {
+    border-bottom: none;
+}
+
+.land-info i {
+    margin-left: 0.5rem;
+    width: 20px;
+}
+
+/* Detail Page */
+.stat-item {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: var(--light-color);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateX(-5px);
+    background-color: #e9ecef;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .land-card {
+        margin-bottom: 1rem;
+    }
+}

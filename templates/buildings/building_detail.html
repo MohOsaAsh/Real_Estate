@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ building.name }} - تفاصيل المبنى{% endblock %}
+
+{% block page_title %}
+    <div class="d-flex align-items-center">
+        <i class="fas fa-building text-primary me-2"></i>
+        {{ building.name }}
+        {% if not building.is_active %}
+        <span class="badge bg-danger me-2">غير نشط</span>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'rent:building_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i> رجوع
+    </a>
+    <a href="{% url 'rent:building_update' building.pk %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> تعديل
+    </a>
+    <a href="{% url 'rent:building_delete' building.pk %}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> حذف
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- العمود الأيمن: معلومات المبنى -->
+    <div class="col-lg-8">
+        <!-- بطاقة المعلومات الأساسية -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle text-primary"></i> المعلومات الأساسية
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-primary">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">اسم المبنى</small>
+                                <h6 class="mb-0">{{ building.name }}</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-success">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">الأرض</small>
+                                <h6 class="mb-0">
+                                    <a href="#" class="text-decoration-none">{{ building.land.name }}</a>
+                                </h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-info">
+                                <i class="fas fa-tag"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">نوع المبنى</small>
+                                <h6 class="mb-0">
+                                    <span class="badge bg-info">{{ building.get_building_type_display }}</span>
+                                </h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-warning">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">سنة البناء</small>
+                                <h6 class="mb-0">
+                                    {% if building.construction_year %}
+                                        {{ building.construction_year }}
+                                    {% else %}
+                                        <span class="text-muted">غير محدد</span>
+                                    {% endif %}
+                                </h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-purple">
+                                <i class="fas fa-ruler-combined"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">المساحة الإجمالية</small>
+                                <h6 class="mb-0">{{ building.total_area|floatformat:2 }} م²</h6>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="info-box">
+                            <div class="info-icon bg-secondary">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="info-content">
+                                <small class="text-muted d-block">عدد الطوابق</small>
+                                <h6 class="mb-0">{{ building.floors_count }} طابق</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if building.notes %}
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="text-muted mb-2">
+                        <i class="fas fa-sticky-note"></i> الملاحظات
+                    </h6>
+                    <p class="text-secondary mb-0">{{ building.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- بطاقة الوحدات -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-home text-primary"></i> الوحدات السكنية/التجارية
+                </h5>
+                <a href="#" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> وحدة جديدة
+                </a>
+            </div>
+            <div class="card-body">
+                {% if building.units.all %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم الوحدة</th>
+                                <th>الطابق</th>
+                                <th>النوع</th>
+                                <th>المساحة</th>
+                                <th>الحالة</th>
+                                <th>الإيجار</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for unit in building.units.all %}
+                            <tr>
+                                <td>
+                                    <strong>
+                                        <a href="#" class="text-decoration-none">{{ unit.unit_number }}</a>
+                                    </strong>
+                                </td>
+                                <td>{{ unit.floor }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ unit.get_unit_type_display }}</span>
+                                </td>
+                                <td>{{ unit.area|floatformat:2 }} م²</td>
+                                <td>
+                                    {% if unit.status == 'available' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> متاح
+                                    </span>
+                                    {% elif unit.status == 'rented' %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-key"></i> مؤجر
+                                    </span>
+                                    {% elif unit.status == 'maintenance' %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-tools"></i> صيانة
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-ban"></i> غير متاح
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if unit.current_rent %}
+                                        <strong>{{ unit.current_rent|floatformat:2 }}</strong> ريال
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="#" class="btn btn-outline-primary" title="عرض">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-warning" title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-home fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">لا توجد وحدات في هذا المبنى</h6>
+                    <p class="text-muted">ابدأ بإضافة وحدات لهذا المبنى</p>
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> إضافة وحدة جديدة
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- بطاقة تاريخ التعديلات -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-history text-primary"></i> معلومات السجل
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="history-icon bg-success-subtle me-3">
+                                <i class="fas fa-plus-circle text-success"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">تاريخ الإنشاء</small>
+                                <strong>{{ building.created_at|date:"Y/m/d - H:i" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="history-icon bg-warning-subtle me-3">
+                                <i class="fas fa-edit text-warning"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">آخر تحديث</small>
+                                <strong>{{ building.updated_at|date:"Y/m/d - H:i" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% if building.created_by %}
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="history-icon bg-primary-subtle me-3">
+                                <i class="fas fa-user text-primary"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">تم الإنشاء بواسطة</small>
+                                <strong>{{ building.created_by.get_full_name|default:building.created_by.username }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- العمود الأيسر: الإحصائيات والمعلومات السريعة -->
+    <div class="col-lg-4">
+        <!-- بطاقة الحالة -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center">
+                <div class="status-badge mb-3">
+                    {% if building.is_active %}
+                    <div class="status-icon bg-success">
+                        <i class="fas fa-check-circle fa-3x"></i>
+                    </div>
+                    <h5 class="text-success mt-2">نشط</h5>
+                    {% else %}
+                    <div class="status-icon bg-danger">
+                        <i class="fas fa-times-circle fa-3x"></i>
+                    </div>
+                    <h5 class="text-danger mt-2">غير نشط</h5>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-0">حالة المبنى الحالية</p>
+            </div>
+        </div>
+
+        <!-- بطاقة الإحصائيات -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar text-primary"></i> إحصائيات سريعة
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="stat-item mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">
+                            <i class="fas fa-home"></i> إجمالي الوحدات
+                        </span>
+                        <h4 class="mb-0 text-primary">{{ building.units.count }}</h4>
+                    </div>
+                </div>
+
+                <div class="stat-item mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">
+                            <i class="fas fa-check-circle"></i> الوحدات المتاحة
+                        </span>
+                        <h4 class="mb-0 text-success">{{ building.get_available_units.count }}</h4>
+                    </div>
+                </div>
+
+                <div class="stat-item mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">
+                            <i class="fas fa-key"></i> الوحدات المؤجرة
+                        </span>
+                        <h4 class="mb-0 text-warning">{{ building.units.filter.count }}</h4>
+                    </div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">
+                            <i class="fas fa-chart-pie"></i> معدل الإشغال
+                        </span>
+                        <h4 class="mb-0 text-info">{{ building.get_occupancy_rate|floatformat:1 }}%</h4>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        {% with rate=building.get_occupancy_rate %}
+                        <div class="progress-bar {% if rate >= 80 %}bg-success{% elif rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ rate }}%">
+                            {{ rate|floatformat:0 }}%
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- بطاقة الإيرادات المتوقعة -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0">
+                    <i class="fas fa-money-bill-wave text-success"></i> الإيرادات
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="revenue-item mb-3">
+                    <small class="text-muted d-block mb-1">الإيراد الشهري الحالي</small>
+                    <h4 class="mb-0 text-success">
+                        <i class="fas fa-coins"></i> 0.00 ريال
+                    </h4>
+                </div>
+                <div class="revenue-item mb-3">
+                    <small class="text-muted d-block mb-1">الإيراد السنوي المتوقع</small>
+                    <h5 class="mb-0 text-info">
+                        <i class="fas fa-chart-line"></i> 0.00 ريال
+                    </h5>
+                </div>
+                <div class="revenue-item">
+                    <small class="text-muted d-block mb-1">العائد على الاستثمار</small>
+                    <h5 class="mb-0 text-primary">
+                        <i class="fas fa-percentage"></i> 0.0%
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- بطاقة الإجراءات السريعة -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt text-warning"></i> إجراءات سريعة
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> إضافة وحدة جديدة
+                    </a>
+                    <a href="#" class="btn btn-outline-success">
+                        <i class="fas fa-file-contract"></i> إضافة عقد إيجار
+                    </a>
+                    <a href="#" class="btn btn-outline-info">
+                        <i class="fas fa-print"></i> طباعة التقرير
+                    </a>
+                    <a href="{% url 'rent:building_update' building.pk %}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit"></i> تعديل البيانات
+                    </a>
+                    <hr class="my-2">
+                    <a href="{% url 'rent:building_delete' building.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> حذف المبنى
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/building_detail.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/building_detail.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}لوحة التدقيق{% endblock %}
+
+{% block page_title %}
+    <div class="d-flex align-items-center">
+        <i class="fas fa-shield-alt text-primary me-2"></i>
+        لوحة التدقيق
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- إحصائيات سريعة -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-list-alt fa-2x text-primary mb-2"></i>
+                <h3>{{ stats.total_logs|default:0 }}</h3>
+                <small class="text-muted">إجمالي العمليات (30 يوم)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-plus-circle fa-2x text-success mb-2"></i>
+                <h3>{{ stats.creates|default:0 }}</h3>
+                <small class="text-muted">عمليات إنشاء</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-edit fa-2x text-warning mb-2"></i>
+                <h3>{{ stats.updates|default:0 }}</h3>
+                <small class="text-muted">عمليات تعديل</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-sign-in-alt fa-2x text-info mb-2"></i>
+                <h3>{{ stats.logins|default:0 }}</h3>
+                <small class="text-muted">تسجيلات الدخول</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آخر العمليات -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-clock text-primary"></i> آخر العمليات</h5>
+        <a href="{% url 'audit_log:logs_list' %}" class="btn btn-sm btn-outline-primary">
+            عرض الكل <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>المستخدم</th>
+                        <th>العملية</th>
+                        <th>النموذج</th>
+                        <th>الوصف</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in stats.recent_logs %}
+                    <tr>
+                        <td><small>{{ log.created_at|date:"Y/m/d H:i" }}</small></td>
+                        <td>{{ log.user_name }}</td>
+                        <td>
+                            {% if log.action == 'create' %}
+                                <span class="badge bg-success">إنشاء</span>
+                            {% elif log.action == 'update' %}
+                                <span class="badge bg-warning text-dark">تعديل</span>
+                            {% elif log.action == 'delete' %}
+                                <span class="badge bg-danger">حذف</span>
+                            {% elif log.action == 'login' %}
+                                <span class="badge bg-info">دخول</span>
+                            {% elif log.action == 'logout' %}
+                                <span class="badge bg-secondary">خروج</span>
+                            {% elif log.action == 'login_failed' %}
+                                <span class="badge bg-danger">دخول فاشل</span>
+                            {% else %}
+                                <span class="badge bg-dark">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.model_name }}</td>
+                        <td><small>{{ log.object_repr|truncatechars:50 }}</small></td>
+                        <td><small>{{ log.ip_address|default:"-" }}</small></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">لا توجد عمليات مسجلة</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

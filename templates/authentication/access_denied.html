@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ممنوع الوصول - 403{% endblock %}
+
+{% block extra_css %}
+<style>
+    .access-denied-container {
+        min-height: 60vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .access-denied-icon {
+        animation: shake 0.5s ease-in-out;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+    
+    .btn-animated {
+        transition: all 0.3s ease;
+    }
+    
+    .btn-animated:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'accounts_app:dashboard' %}">الرئيسية</a></li>
+        <li class="breadcrumb-item active" aria-current="page">ممنوع الوصول</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="access-denied-container">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger shadow-lg">
+                <div class="card-body text-center p-5">
+                    <!-- Icon -->
+                    <div class="access-denied-icon">
+                        <i class="fas fa-ban fa-5x text-danger mb-4"></i>
+                    </div>
+                    
+                    <!-- Error Code -->
+                    <h1 class="display-4 text-danger mb-3 fw-bold">403</h1>
+                    
+                    <!-- Title -->
+                    <h3 class="mb-4">ممنوع الوصول</h3>
+                    
+                    <!-- Description -->
+                    <p class="lead text-muted mb-4">
+                        عذراً، ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة.
+                    </p>
+                    
+                    <!-- Notice Alert -->
+                    <div class="alert alert-warning text-end">
+                        <i class="fas fa-info-circle ms-2"></i>
+                        <strong>ملاحظة:</strong> 
+                        إذا كنت تعتقد أنه يجب أن يكون لديك صلاحية الوصول، يرجى الاتصال بالمشرف.
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'auth_app:user_dashboard' %}" 
+                           class="btn btn-primary btn-lg btn-animated">
+                            <i class="fas fa-home ms-2"></i> العودة للوحة التحكم
+                        </a>
+                        
+                        <a href="javascript:history.back()" 
+                           class="btn btn-outline-secondary btn-animated">
+                            <i class="fas fa-arrow-right ms-2"></i> الرجوع للصفحة السابقة
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Help Card -->
+            <div class="card mt-4 shadow">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle ms-2"></i> هل تحتاج مساعدة؟
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3 fw-bold">يمكنك:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success ms-2"></i>
+                            التواصل مع المشرف لطلب الصلاحيات المناسبة
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success ms-2"></i>
+                            التحقق من صلاحياتك الحالية من ملفك الشخصي
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success ms-2"></i>
+                            العودة للوحة التحكم والعمل على الصفحات المتاحة لك
+                        </li>
+                    </ul>
+                    
+                    <!-- Contact Info -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="mb-3">
+                            <i class="bi bi-envelope-fill text-primary ms-2"></i>
+                            معلومات الاتصال
+                        </h6>
+                        <p class="mb-2">
+                            <i class="bi bi-envelope ms-2"></i>
+                            البريد الإلكتروني: 
+                            <a href="mailto:admin@example.com">admin@example.com</a>
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-telephone ms-2"></i>
+                            الهاتف: 
+                            <a href="tel:+966500000000">+966 50 000 0000</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add some interactivity
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate the icon on page load
+        const icon = document.querySelector('.access-denied-icon i');
+        if (icon) {
+            setTimeout(() => {
+                icon.style.animation = 'shake 0.5s ease-in-out';
+            }, 200);
+        }
+        
+        // Log access denied attempt (optional)
+        console.warn('Access Denied: User attempted to access restricted page');
+        
+        // Optional: Send analytics or logging
+        // sendAccessDeniedLog();
+    });
+</script>
+{% endblock %}

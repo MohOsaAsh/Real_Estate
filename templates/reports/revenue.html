@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تقرير الإيرادات{% endblock %}
+
+{% block page_title %}تقرير الإيرادات المالية{% endblock %}
+
+{% block page_actions %}
+<button class="btn btn-primary" onclick="window.print()">
+    <i class="fas fa-print"></i> طباعة
+</button>
+{% if perms.rent.export_reports %}
+<button class="btn btn-success" onclick="exportToExcel('revenue-table', 'revenue-report')">
+    <i class="fas fa-file-excel"></i> تصدير Excel
+</button>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">عدد الأشهر</label>
+                <select name="months" class="form-select">
+                    <option value="3" {% if months == 3 %}selected{% endif %}>آخر 3 أشهر</option>
+                    <option value="6" {% if months == 6 %}selected{% endif %}>آخر 6 أشهر</option>
+                    <option value="12" {% if months == 12 %}selected{% endif %}>آخر 12 شهر</option>
+                    <option value="24" {% if months == 24 %}selected{% endif %}>آخر سنتين</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> إنشاء التقرير
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4 report-stats">
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-money-bill-wave fa-3x text-primary mb-3"></i>
+                <div class="text-muted small mb-2">إجمالي الإيرادات</div>
+                <div class="fw-bold fs-3 text-primary">{{ total_revenue|floatformat:2 }}</div>
+                <div class="text-muted small">ريال</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-day fa-3x text-success mb-3"></i>
+                <div class="text-muted small mb-2">إيرادات اليوم</div>
+                <div class="fw-bold fs-3 text-success">{{ today_revenue|floatformat:2 }}</div>
+                <div class="text-muted small">ريال</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-alt fa-3x text-info mb-3"></i>
+                <div class="text-muted small mb-2">إيرادات الشهر</div>
+                <div class="fw-bold fs-3 text-info">{{ month_revenue|floatformat:2 }}</div>
+                <div class="text-muted small">ريال</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-receipt fa-3x text-warning mb-3"></i>
+                <div class="text-muted small mb-2">عدد السندات</div>
+                <div class="fw-bold fs-3 text-warning">{{ total_receipts }}</div>
+                <div class="text-muted small">سند</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Chart -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> الإيرادات الشهرية</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Revenue Table -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-table"></i> تفصيل الإيرادات الشهرية</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="revenue-table" class="table table-hover align-middle mb-0 report-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الشهر</th>
+                                <th>المبلغ (ريال)</th>
+                                <th>النسبة</th>
+                                <th>المقارنة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for revenue in monthly_revenue %}
+                            <tr>
+                                <td class="fw-bold">{{ revenue.month }}</td>
+                                <td class="fw-bold text-primary">{{ revenue.total|floatformat:2 }}</td>
+                                <td>
+                                    {% widthratio revenue.total total_revenue 100 as percentage %}
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-primary" 
+                                             role="progressbar" 
+                                             style="width: {{ percentage }}%">
+                                            {{ percentage }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if forloop.counter > 1 %}
+                                        {% if revenue.total > prev_total %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-arrow-up"></i> زيادة
+                                        </span>
+                                        {% elif revenue.total < prev_total %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-arrow-down"></i> نقص
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-minus"></i> ثابت
+                                        </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td>الإجمالي</td>
+                                <td class="text-primary">{{ total_revenue|floatformat:2 }}</td>
+                                <td colspan="2">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Methods -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-credit-card"></i> طرق الدفع</h5>
+            </div>
+            <div class="card-body">
+                <ul class="payment-methods-list list-unstyled">
+                    {% for method in payment_methods %}
+                    <li class="mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="method-icon {% if method.method_code == 'cash' %}cash{% elif method.method_code == 'bank_transfer' %}bank{% elif method.method_code == 'check' %}check{% else %}card{% endif %}">
+                                {% if method.method_code == 'cash' %}
+                                <i class="fas fa-money-bill"></i>
+                                {% elif method.method_code == 'bank_transfer' %}
+                                <i class="fas fa-university"></i>
+                                {% elif method.method_code == 'check' %}
+                                <i class="fas fa-money-check"></i>
+                                {% else %}
+                                <i class="fas fa-credit-card"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">{{ method.method }}</div>
+                                <small class="text-muted">
+                                    {% widthratio method.total total_revenue 100 as pct %}
+                                    {{ pct }}% من الإجمالي
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-primary">{{ method.total|floatformat:2 }}</div>
+                                <small class="text-muted">ريال</small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Period Info -->
+<div class="alert alert-info" role="alert">
+    <i class="fas fa-info-circle"></i>
+    <strong>معلومات الفترة:</strong> 
+    التقرير يعرض البيانات من {{ start_date|default:"البداية" }} حتى اليوم ({{ months|default:12 }} شهر).
+    جميع المبالغ بالريال السعودي.
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/reports.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// ✅ تعريف بيانات المخطط مع حماية من القيم الفارغة
+window.revenueChartData = {
+    {% if chart_data and chart_data.labels and chart_data.values %}
+        labels: {{ chart_data.labels|safe }},
+        values: {{ chart_data.values|safe }}
+    {% elif monthly_revenue %}
+        // استخدام بيانات الجدول كبديل
+        labels: [
+            {% for revenue in monthly_revenue %}
+                "{{ revenue.month }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        values: [
+            {% for revenue in monthly_revenue %}
+                {{ revenue.total|default:0 }}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    {% else %}
+        // بيانات فارغة
+        labels: [],
+        values: []
+    {% endif %}
+};
+
+console.log('📊 Chart data defined:', window.revenueChartData);
+</script>
+
+<!-- Reports JS -->
+<script src="{% static 'js/reports.js' %}"></script>
+{% endblock %}

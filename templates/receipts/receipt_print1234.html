@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سند قبض {{ receipt.receipt_number }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/receipt_print.css' %}">
+</head>
+<body>
+    <div class="print-container">
+        <!-- Header -->
+        <div class="print-header">
+            <div class="company-logo">
+                <!-- Add your company logo here -->
+                <img src="{% static 'images/logo.png' %}" alt="شعار الشركة" onerror="this.style.display='none'">
+            </div>
+            <div class="company-info">
+                <h1>شركة عمار العقارية</h1>
+                <p>المملكة العربية السعودية - الدمام</p>
+                <p>هاتف: +966 XX XXX XXXX | البريد الإلكتروني: info@emaar.com</p>
+            </div>
+            <div class="receipt-badge">
+                <h2>سند قبض</h2>
+                <p class="receipt-number">{{ receipt.receipt_number }}</p>
+            </div>
+        </div>
+
+        <!-- Receipt Info -->
+        <div class="receipt-info-section">
+            <div class="info-row">
+                <div class="info-item">
+                    <span class="label">التاريخ:</span>
+                    <span class="value">{{ receipt.receipt_date|date:"Y/m/d" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">الحالة:</span>
+                    <span class="value status-{{ receipt.status }}">
+                        {% if receipt.status == 'posted' %}مرحل{% elif receipt.status == 'draft' %}مسودة{% else %}ملغي{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenant & Contract Info -->
+        <div class="details-section">
+            <h3>معلومات المستأجر والعقد</h3>
+            <table class="details-table">
+                <tr>
+                    <td class="label-cell">المستأجر:</td>
+                    <td class="value-cell">{{ receipt.contract.tenant.name }}</td>
+                    <td class="label-cell">رقم الهوية:</td>
+                    <td class="value-cell">{{ receipt.contract.tenant.national_id|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">رقم العقد:</td>
+                    <td class="value-cell">{{ receipt.contract.contract_number }}</td>
+                    <td class="label-cell">الوحدة:</td>
+                    <td class="value-cell">
+                        {% if unit %}
+                            {{ unit.unit_number }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label-cell">المبنى:</td>
+                    <td class="value-cell" colspan="3">
+                        {% if building %}
+                            {{ building.name }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="payment-section">
+            <h3>تفاصيل الدفع</h3>
+            <table class="payment-table">
+                <tr>
+                    <td class="label-cell">المبلغ المدفوع:</td>
+                    <td class="amount-cell">{{ receipt.amount|floatformat:2 }} ريال</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">طريقة الدفع:</td>
+                    <td class="value-cell">{{ receipt.get_payment_method_display }}</td>
+                </tr>
+                {% if receipt.reference_number %}
+                <tr>
+                    <td class="label-cell">رقم المرجع:</td>
+                    <td class="value-cell">{{ receipt.reference_number }}</td>
+                </tr>
+                {% endif %}
+                {% if receipt.check_number %}
+                <tr>
+                    <td class="label-cell">رقم الشيك:</td>
+                    <td class="value-cell">{{ receipt.check_number }}</td>
+                </tr>
+                {% endif %}
+                {% if receipt.check_date %}
+                <tr>
+                    <td class="label-cell">تاريخ الشيك:</td>
+                    <td class="value-cell">{{ receipt.check_date|date:"Y/m/d" }}</td>
+                </tr>
+                {% endif %}
+                {% if receipt.bank_name %}
+                <tr>
+                    <td class="label-cell">اسم البنك:</td>
+                    <td class="value-cell">{{ receipt.bank_name }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <!-- Payment Period -->
+        {% if receipt.period_start and receipt.period_end %}
+        <div class="period-section">
+            <h3>فترة الدفع</h3>
+            <table class="details-table">
+                <tr>
+                    <td class="label-cell">من تاريخ:</td>
+                    <td class="value-cell">{{ receipt.period_start|date:"Y/m/d" }}</td>
+                    <td class="label-cell">إلى تاريخ:</td>
+                    <td class="value-cell">{{ receipt.period_end|date:"Y/m/d" }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Amount in Words -->
+        <div class="amount-words">
+            <p><strong>المبلغ بالأحرف:</strong> {{ receipt.amount|floatformat:2 }} ريال سعودي فقط لا غير</p>
+        </div>
+
+        <!-- Notes -->
+        {% if receipt.notes %}
+        <div class="notes-section">
+            <h3>ملاحظات</h3>
+            <p>{{ receipt.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Signatures -->
+        <div class="signatures-section">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <p class="signature-label">توقيع المستأجر</p>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <p class="signature-label">توقيع المخول</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="print-footer">
+            <p>تم الطباعة بتاريخ: {{ now|date:"Y/m/d - H:i" }}</p>
+            <p>هذا السند صادر من نظام إدارة العقارات</p>
+            <p class="footer-note">هذا السند صالح فقط بعد الترحيل والتوقيع</p>
+        </div>
+
+        <!-- QR Code (Optional) -->
+        <div class="qr-section">
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" onerror="this.style.display='none'">
+            <p>امسح للتحقق من السند</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto print on load
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

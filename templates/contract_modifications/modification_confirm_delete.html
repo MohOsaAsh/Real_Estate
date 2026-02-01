@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}حذف تعديل - {{ object.contract.contract_number }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        تأكيد الحذف
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>تحذير:</strong> هذا الإجراء لا يمكن التراجع عنه!
+                    </div>
+
+                    <h6 class="mb-3">هل أنت متأكد من حذف هذا التعديل؟</h6>
+                    
+                    <div class="bg-light p-3 rounded mb-4">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">نوع التعديل:</small>
+                                <div class="fw-bold">{{ object.get_modification_type_display }}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">رقم العقد:</small>
+                                <div class="fw-bold">{{ object.contract.contract_number }}</div>
+                            </div>
+                            <div class="col-6 mt-2">
+                                <small class="text-muted">المستأجر:</small>
+                                <div class="fw-bold">{{ object.contract.tenant.name }}</div>
+                            </div>
+                            <div class="col-6 mt-2">
+                                <small class="text-muted">تاريخ السريان:</small>
+                                <div class="fw-bold">{{ object.effective_date|date:"Y-m-d" }}</div>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <small class="text-muted">الملخص:</small>
+                                <div class="fw-bold">{{ object.get_summary }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'rent:modification_detail' object.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> تأكيد الحذف
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+/* ===============================================
+   /* Base Layout Styles - Fixed Version */
+   /* =============================================== */ */
+
+:root {
+    --navbar-height: 60px;
+    --sidebar-width: 250px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #212529;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Main Wrapper */
+.main-wrapper {
+    flex: 1;
+    padding-top: var(--navbar-height);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Container Reset */
+.main-wrapper .container-fluid {
+    height: 100%;
+    max-width: 100%;
+}
+
+/* Row Reset */
+.main-wrapper .row {
+    height: 100%;
+    margin: 0;
+}
+
+/* Main Content Wrapper */
+.main-content-wrapper {
+    padding: 1.5rem;
+    min-height: calc(100vh - var(--navbar-height) - 100px);
+}
+
+/* Page Header */
+.page-header {
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+/* Page Content */
+/* .page-content { */
+    /* هنا يبدأ المحتوى الفعلي بدون أي padding إضافي */
+/* } */
+
+/* Responsive */
+@media (max-width: 768px) {
+    :root {
+        --navbar-height: 56px;
+    }
+    
+    .main-content-wrapper {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-content-wrapper {
+        padding: 0.75rem;
+    }
+}

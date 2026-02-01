@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}حذف سند القبض{% endblock %}
+
+{% block page_title %}
+    <div class="d-flex align-items-center">
+        <i class="fas fa-trash text-danger me-2"></i>
+        تأكيد حذف السند
+    </div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'rent:receipt_detail' receipt.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i> إلغاء
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> تحذير: حذف سند قبض
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-circle"></i> تنبيه مهم
+                    </h6>
+                    <p class="mb-0">
+                        أنت على وشك حذف سند القبض. هذا الإجراء <strong>لا يمكن التراجع عنه</strong>.
+                    </p>
+                </div>
+
+                <!-- Receipt Summary -->
+                <div class="receipt-summary">
+                    <h6 class="text-muted mb-3">معلومات السند المراد حذفه:</h6>
+                    
+                    <table class="table table-bordered">
+                        <tr>
+                            <td class="table-light" width="40%"><strong>رقم السند:</strong></td>
+                            <td>{{ receipt.receipt_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="table-light"><strong>التاريخ:</strong></td>
+                            <td>{{ receipt.receipt_date|date:"Y/m/d" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="table-light"><strong>المبلغ:</strong></td>
+                            <td class="text-success"><strong>{{ receipt.amount|floatformat:2 }} ريال</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="table-light"><strong>العقد:</strong></td>
+                            <td>{{ receipt.contract.contract_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="table-light"><strong>المستأجر:</strong></td>
+                            <td>{{ receipt.contract.tenant.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="table-light"><strong>الحالة:</strong></td>
+                            <td>
+                                {% if receipt.status == 'draft' %}
+                                <span class="badge bg-warning">مسودة</span>
+                                {% elif receipt.status == 'posted' %}
+                                <span class="badge bg-success">مرحل</span>
+                                {% elif receipt.status == 'cancelled' %}
+                                <span class="badge bg-danger">ملغي</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Warning Message -->
+                {% if receipt.status == 'posted' %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>ملاحظة:</strong> هذا السند مرحل. حذفه قد يؤثر على حسابات العقد والمستأجر.
+                </div>
+                {% endif %}
+
+                <!-- Confirmation Form -->
+                <form method="post" id="deleteForm" class="mt-4">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label" for="confirmDelete">
+                            <strong>نعم، أنا متأكد من حذف هذا السند</strong>
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="deleteReason" class="form-label">سبب الحذف (اختياري):</label>
+                        <textarea class="form-control" id="deleteReason" name="delete_reason" rows="3" 
+                                  placeholder="أدخل سبب حذف السند..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-trash"></i> تأكيد الحذف
+                        </button>
+                        <a href="{% url 'rent:receipt_detail' receipt.pk %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Information Card -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-lightbulb"></i> ماذا يحدث عند الحذف؟
+                </h6>
+                <ul class="info-list">
+                    <li>سيتم حذف سند القبض نهائياً من النظام</li>
+                    <li>سيتم تحديث حسابات العقد والمستأجر</li>
+                    <li>سيتم تسجيل هذا الإجراء في سجل النظام</li>
+                    <li>لن تتمكن من استرجاع السند بعد الحذف</li>
+                    <li>قد تحتاج إلى إنشاء سند جديد إذا كان الحذف خطأ</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/receipt_delete.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/receipt_delete.js' %}"></script>
+{% endblock %}

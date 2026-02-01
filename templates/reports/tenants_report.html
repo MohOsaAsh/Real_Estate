@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+
+{% block title %}تقرير الإيرادات{% endblock %}
+
+{% block page_title %}تقرير  المستاجرين {% endblock %}
+
+
+{% block extra_css %}
+<link href="{% static 'css/tenants_reports.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <!-- رأس التقرير -->
+        <div class="header">
+            <h1>تقرير المستأجرين والمستحقات</h1>
+            <p class="date">تاريخ التقرير: {{ report_date|date:"Y-m-d" }}</p>
+        </div>
+        
+        <!-- فلاتر البحث -->
+        <div class="filters">
+            <h3>فلاتر البحث</h3>
+            <form method="get" action="">
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label>اسم المستأجر:</label>
+                        <input type="text" name="tenant_name" value="{{ filters.tenant_name }}" placeholder="ابحث بالاسم...">
+                    </div>
+                    <div class="filter-item">
+                        <label>الموقع:</label>
+                        <input type="text" name="location" value="{{ filters.location }}" placeholder="ابحث بالموقع...">
+                    </div>
+                    <div class="filter-item">
+                        <label>حالة المستحقات:</label>
+                        <select name="has_outstanding">
+                            <option value="">الكل</option>
+                            <option value="yes" {% if filters.has_outstanding == 'yes' %}selected{% endif %}>يوجد مستحقات</option>
+                            <option value="no" {% if filters.has_outstanding == 'no' %}selected{% endif %}>لا يوجد مستحقات</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <button type="submit">بحث</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- جدول البيانات -->
+        <div class="table-container">
+            {% if report_data %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم المستأجر</th>
+                        <th>اسم المستأجر</th>
+                        <th>الموقع</th>
+                        <th>الإيجار السنوي</th>
+                        <th>رقم المعرض</th>
+                        <th>الهاتف</th>
+                        <th>المستحق</th>
+                        <th>من تاريخ</th>
+                        <th>إلى تاريخ</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in report_data %}
+                    {% if item.outstanding_amount > 0 %}
+                    <tr class="{% cycle 'row-even' 'row-odd' %}">
+                        <td>{{ item.tenant_id }}</td>
+                        <td>{{ item.tenant_name }}</td>
+                        <td>{{ item.location|default:"غير محدد" }}</td>
+                        <td class="amount">{{ item.annual_rent|floatformat:2|intcomma }}</td>
+                        <td>{{ item.all_unit_numbers_str|default:"غير محدد" }}</td>
+                        <td>{{ item.tenant_phone|default:"غير محدد" }}</td>
+                        <td class="{% if item.outstanding_amount > 0 %}overdue{% else %}paid{% endif %}">
+                            {{ item.outstanding_amount|floatformat:2|intcomma }}
+                        </td>
+                        <td>{{ item.due_period_from|date:"Y-m-d"|default:"-" }}</td>
+                        <td>{{ item.due_period_to|date:"Y-m-d"|default:"-" }}</td>
+                        <td>
+                            <div class="actions">
+                                <a href="{% url 'rent:contract_detail' item.contract_id %}" class="btn btn-info">تفاصيل</a>
+                                {% if item.outstanding_amount > 0 and perms.rent.add_receipt %}
+                                <a href="{% url 'rent:receipt_create' %}?contract={{ item.contract_id }}" class="btn btn-warning">سداد</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif%}
+                    {% endfor %}
+
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f8f9fa; font-weight: bold;">
+                        <td colspan="6" style="text-align: left; padding-right: 15px;">الإجمالي:</td>
+                        <td class="amount">{{ total_outstanding|floatformat:2|intcomma  }}</td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>لا توجد بيانات للعرض</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- ملخص الإحصائيات -->
+        <div class="summary">
+            <div class="summary-card">
+                <h3>عدد العقود</h3>
+                <div class="value">{{ report_data|length }}</div>
+            </div>
+            <div class="summary-card warning">
+                <h3>إجمالي المستحقات</h3>
+                <div class="value">{{ total_outstanding|floatformat:2|intcomma  }} ريال</div>
+            </div>
+            <div class="summary-card success">
+                <h3>إجمالي الإيجار السنوي</h3>
+                <div class="value">{{ total_annual_rent|floatformat:2|intcomma  }} ريال</div>
+            </div>
+        </div>
+        <!-- أزرار التصدير -->
+        <div class="export-buttons">
+            {% if perms.rent.export_reports %}
+            <a href="{% url 'rent:export_tenants_excel' %}">📊 تصدير Excel</a>
+            <a href="{% url 'rent:export_tenants_pdf' %}">📄 تصدير PDF</a>
+            {% endif %}
+            <a href="#" onclick="window.print(); return false;">🖨️ طباعة</a>
+        </div>
+
+
+    </div>
+    
+    <style>
+        /* ألوان متناوبة للصفوف */
+        .row-even {
+            background-color: #ffffff;
+        }
+        .row-odd {
+            background-color: #f8f9fa;
+        }
+        .row-even:hover, .row-odd:hover {
+            background-color: #e9ecef;
+        }
+    </style>
+{% endblock %}

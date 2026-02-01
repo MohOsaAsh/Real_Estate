@@ -1,0 +1,237 @@
+/* receipt_list.css */
+
+/* Statistics Cards */
+.stat-card {
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-card-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.stat-card-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.stat-card-info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-left: 20px;
+    opacity: 0.8;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-label {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Search Form */
+.search-form {
+    margin: 0;
+}
+
+.search-form .input-group-text {
+    background: white;
+    border-left: none;
+}
+
+.search-form .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* Table Styles */
+.receipts-table {
+    margin: 0;
+}
+
+.receipts-table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+    font-weight: 600;
+    text-align: right;
+    padding: 12px;
+}
+
+.receipts-table tbody td {
+    vertical-align: middle;
+    padding: 12px;
+    text-align: right;
+}
+
+.receipt-row {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.receipt-row:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+}
+
+/* Badge Styles */
+.badge {
+    padding: 6px 12px;
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+.badge-payment-cash {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-payment-check {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge-payment-bank_transfer {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.badge-payment-credit_card {
+    background-color: #fd7e14;
+    color: white;
+}
+
+/* Button Groups */
+.btn-group-sm .btn {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state i {
+    opacity: 0.3;
+}
+
+/* Pagination */
+.pagination {
+    margin: 0;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+    border-radius: 6px;
+    margin: 0 3px;
+    border: 1px solid #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Table Footer */
+.receipts-table tfoot td {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    padding: 15px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card {
+        margin-bottom: 15px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+    }
+    
+    .search-form .col-md-2,
+    .search-form .col-md-4 {
+        margin-bottom: 10px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+/* Loading State */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

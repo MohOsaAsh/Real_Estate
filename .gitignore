@@ -1,0 +1,41 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python
+*.py[cod]
+*$py.class
+__pycache__/
+*.egg-info/
+*.egg
+
+# Django
+*.log
+logs/
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/

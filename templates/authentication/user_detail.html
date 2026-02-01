@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}تفاصيل المستخدم - {{ user_profile.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <a href="{% url 'auth_app:user-list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i> العودة لقائمة المستخدمين
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Basic Info -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-circle"></i> المعلومات الأساسية
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    <h4 class="mt-3">{{ user_profile.get_full_name|default:user_profile.username }}</h4>
+                    <p class="text-muted">@{{ user_profile.username }}</p>
+                </div>
+                
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong><i class="fas fa-user"></i> اسم المستخدم:</strong></td>
+                        <td>{{ user_profile.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-id-card"></i> الاسم الأول:</strong></td>
+                        <td>{{ user_profile.first_name|default:"غير محدد" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-id-card"></i> اسم العائلة:</strong></td>
+                        <td>{{ user_profile.last_name|default:"غير محدد" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-envelope"></i> البريد الإلكتروني:</strong></td>
+                        <td>{{ user_profile.email|default:"غير محدد" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-calendar-plus"></i> تاريخ الانضمام:</strong></td>
+                        <td>{{ user_profile.date_joined|date:"l, d F Y - H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong><i class="fas fa-clock"></i> آخر تسجيل دخول:</strong></td>
+                        <td>
+                            {% if user_profile.last_login %}
+                                {{ user_profile.last_login|date:"l, d F Y - H:i" }}
+                            {% else %}
+                                لم يسجل دخول بعد
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                
+                {% if user == user_profile or user.is_superuser %}
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'auth_app:user-update' user_profile.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> تعديل المعلومات
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Status & Roles -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt"></i> الحالة والأدوار
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6 class="mb-3"><i class="fas fa-tag"></i> حالة الحساب:</h6>
+                <div class="mb-3">
+                    {% if user_profile.is_active %}
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-check-circle"></i> حساب نشط
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">
+                            <i class="fas fa-times-circle"></i> حساب معطل
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <h6 class="mb-3 mt-4"><i class="fas fa-user-tag"></i> نوع المستخدم:</h6>
+                <div class="mb-3">
+                    {% if user_profile.is_superuser %}
+                        <span class="badge bg-danger fs-6">
+                            <i class="fas fa-crown"></i> مشرف عام
+                        </span>
+                        <p class="text-muted small mt-2">لديه جميع الصلاحيات في النظام</p>
+                    {% elif user_profile.is_staff %}
+                        <span class="badge bg-warning fs-6">
+                            <i class="fas fa-user-tie"></i> موظف
+                        </span>
+                        <p class="text-muted small mt-2">يمكنه الوصول للوحة الإدارة</p>
+                    {% else %}
+                        <span class="badge bg-info fs-6">
+                            <i class="fas fa-user"></i> مستخدم عادي
+                        </span>
+                        <p class="text-muted small mt-2">صلاحيات محدودة حسب المجموعات</p>
+                    {% endif %}
+                </div>
+                
+                {% if user.is_superuser %}
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'auth_app:permission-management' user_profile.pk %}" class="btn btn-warning">
+                        <i class="fas fa-key"></i> إدارة الصلاحيات
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> إحصائيات سريعة
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                        <h5>{{ user_groups.count }}</h5>
+                        <small class="text-muted">المجموعات</small>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-key fa-2x text-warning mb-2"></i>
+                        <h5>{{ user_permissions.count }}</h5>
+                        <small class="text-muted">الصلاحيات الخاصة</small>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-lock fa-2x text-success mb-2"></i>
+                        <h5>{{ all_permissions|length }}</h5>
+                        <small class="text-muted">إجمالي الصلاحيات</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Groups Section -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users"></i> المجموعات ({{ user_groups.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if user_groups %}
+                    <div class="list-group">
+                        {% for group in user_groups %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-users text-primary"></i>
+                                <strong>{{ group.name }}</strong>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">
+                                {{ group.permissions.count }} صلاحية
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> لا ينتمي المستخدم لأي مجموعة
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Direct Permissions Section -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-key"></i> الصلاحيات الخاصة ({{ user_permissions.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if user_permissions %}
+                    <div class="list-group" style="max-height: 400px; overflow-y: auto;">
+                        {% for permission in user_permissions %}
+                        <div class="list-group-item">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <strong>{{ permission.name }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ permission.content_type.app_label }}.{{ permission.codename }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> لا يوجد صلاحيات خاصة مباشرة
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All Permissions Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lock"></i> جميع الصلاحيات (المباشرة + المجموعات)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if all_permissions %}
+                    <div class="row">
+                        {% for permission in all_permissions %}
+                        <div class="col-md-6 col-lg-4 mb-2">
+                            <div class="badge bg-light text-dark border w-100 text-start p-2">
+                                <i class="fas fa-shield-alt text-success"></i>
+                                {{ permission }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> المستخدم ليس لديه أي صلاحيات
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

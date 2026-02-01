@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}قائمة المباني{% endblock %}
+
+{% block page_title %}إدارة المباني{% endblock %}
+
+{% block page_actions %}
+{% if perms.rent.add_building %}
+<a href="{% url 'rent:building_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> مبنى جديد
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- إحصائيات سريعة -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">إجمالي المباني</h6>
+                        <h3 class="mb-0">{{ buildings|length }}</h3>
+                    </div>
+                    <div class="stats-icon bg-primary">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">المباني النشطة</h6>
+                        <h3 class="mb-0 text-success">{{ buildings|length }}</h3>
+                    </div>
+                    <div class="stats-icon bg-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">المباني السكنية</h6>
+                        <h3 class="mb-0 text-info">
+                            {% with residential=buildings|length %}{{ residential }}{% endwith %}
+                        </h3>
+                    </div>
+                    <div class="stats-icon bg-info">
+                        <i class="fas fa-home"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">المباني التجارية</h6>
+                        <h3 class="mb-0 text-warning">
+                            {% with commercial=buildings|length %}{{ commercial }}{% endwith %}
+                        </h3>
+                    </div>
+                    <div class="stats-icon bg-warning">
+                        <i class="fas fa-store"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- البحث والتصفية -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3" id="filterForm">
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-search"></i> بحث
+                </label>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="اسم المبنى أو الأرض" 
+                       value="{{ request.GET.search }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="fas fa-building"></i> نوع المبنى
+                </label>
+                <select name="type" class="form-select">
+                    <option value="">الكل</option>
+                    <option value="residential" {% if request.GET.type == 'residential' %}selected{% endif %}>سكني</option>
+                    <option value="commercial" {% if request.GET.type == 'commercial' %}selected{% endif %}>تجاري</option>
+                    <option value="mall" {% if request.GET.type == 'mall' %}selected{% endif %}>مول</option>
+                    <option value="mixed" {% if request.GET.type == 'mixed' %}selected{% endif %}>مختلط</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="fas fa-map-marker-alt"></i> الأرض
+                </label>
+                <select name="land" class="form-select">
+                    <option value="">الكل</option>
+                    <!-- يمكن ملء هذا ديناميكياً من الـ view -->
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="fas fa-toggle-on"></i> الحالة
+                </label>
+                <select name="status" class="form-select">
+                    <option value="">الكل</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>نشط</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>غير نشط</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid gap-2 d-md-flex">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                    <a href="{% url 'rent:building_list' %}" class="btn btn-secondary flex-fill">
+                        <i class="fas fa-redo"></i> إعادة
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- عرض النتائج -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="text-muted">عدد النتائج:</span>
+                <span class="badge bg-primary">{{ buildings|length }}</span>
+            </div>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active" data-view="grid">
+                    <i class="fas fa-th"></i> شبكة
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-view="list">
+                    <i class="fas fa-list"></i> قائمة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- عرض البطاقات -->
+<div id="gridView" class="row g-4">
+    {% if buildings %}
+        {% for building in buildings %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="card building-card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title mb-2">
+                                <a href="{% url 'rent:building_detail' building.pk %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ building.name }}
+                                </a>
+                            </h5>
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ building.land.name }}
+                            </small>
+                        </div>
+                        <div class="building-icon">
+                            {% if building.building_type == 'residential' %}
+                                <i class="fas fa-home fa-2x text-primary"></i>
+                            {% elif building.building_type == 'commercial' %}
+                                <i class="fas fa-store fa-2x text-warning"></i>
+                            {% elif building.building_type == 'mall' %}
+                                <i class="fas fa-shopping-cart fa-2x text-info"></i>
+                            {% else %}
+                                <i class="fas fa-building fa-2x text-secondary"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-info">{{ building.get_building_type_display }}</span>
+                        {% if building.construction_year %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-calendar"></i> {{ building.construction_year }}
+                        </span>
+                        {% endif %}
+                        {% if building.is_active %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check"></i> نشط
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-times"></i> غير نشط
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="building-info">
+                        <div class="info-row">
+                            <span class="text-muted">
+                                <i class="fas fa-ruler-combined"></i> المساحة:
+                            </span>
+                            <span class="fw-bold">{{ building.total_area|floatformat:2 }} م²</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">
+                                <i class="fas fa-layer-group"></i> الطوابق:
+                            </span>
+                            <span class="fw-bold">{{ building.floors_count }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">
+                                <i class="fas fa-home"></i> الوحدات:
+                            </span>
+                            <span class="fw-bold text-primary">{{ building.units.count }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">
+                                <i class="fas fa-chart-pie"></i> معدل الإشغال:
+                            </span>
+                            <span class="fw-bold text-success">{{ building.get_occupancy_rate|floatformat:1 }}%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted d-block mb-1">معدل الإشغال</small>
+                        <div class="progress" style="height: 25px;">
+                            {% with rate=building.get_occupancy_rate %}
+                            <div class="progress-bar {% if rate >= 80 %}bg-success{% elif rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ rate }}%">
+                                {{ rate|floatformat:0 }}%
+                            </div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'rent:building_detail' building.pk %}"
+                           class="btn btn-sm btn-outline-primary" title="عرض التفاصيل">
+                            <i class="fas fa-eye"></i> عرض
+                        </a>
+                        {% if perms.rent.change_building %}
+                        <a href="{% url 'rent:building_update' building.pk %}"
+                           class="btn btn-sm btn-outline-warning" title="تعديل">
+                            <i class="fas fa-edit"></i> تعديل
+                        </a>
+                        {% endif %}
+                        {% if perms.rent.delete_building %}
+                        <a href="{% url 'rent:building_delete' building.pk %}"
+                           class="btn btn-sm btn-outline-danger" title="حذف">
+                            <i class="fas fa-trash"></i> حذف
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-building fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">لا توجد مباني</h5>
+                    <p class="text-muted">
+                        {% if request.GET.search or request.GET.type %}
+                            لم يتم العثور على نتائج تطابق البحث. جرب معايير بحث أخرى.
+                        {% else %}
+                            ابدأ بإضافة مبنى جديد لإدارة العقارات الخاصة بك
+                        {% endif %}
+                    </p>
+                    {% if perms.rent.add_building %}
+                    <a href="{% url 'rent:building_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> مبنى جديد
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- عرض القائمة (مخفي افتراضياً) -->
+<div id="listView" class="d-none">
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>المبنى</th>
+                        <th>الأرض</th>
+                        <th>النوع</th>
+                        <th>المساحة</th>
+                        <th>الطوابق</th>
+                        <th>الوحدات</th>
+                        <th>الإشغال</th>
+                        <th>الحالة</th>
+                        <th class="text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for building in buildings %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'rent:building_detail' building.pk %}" class="text-decoration-none">
+                                <strong>{{ building.name }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ building.land.name }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ building.get_building_type_display }}</span>
+                        </td>
+                        <td>{{ building.total_area|floatformat:2 }} م²</td>
+                        <td>{{ building.floors_count }}</td>
+                        <td>{{ building.units.count }}</td>
+                        <td>
+                            <span class="badge bg-success">{{ building.get_occupancy_rate|floatformat:1 }}%</span>
+                        </td>
+                        <td>
+                            {% if building.is_active %}
+                            <span class="badge bg-success">نشط</span>
+                            {% else %}
+                            <span class="badge bg-danger">غير نشط</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'rent:building_detail' building.pk %}"
+                                   class="btn btn-outline-primary" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if perms.rent.change_building %}
+                                <a href="{% url 'rent:building_update' building.pk %}"
+                                   class="btn btn-outline-warning" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.rent.delete_building %}
+                                <a href="{% url 'rent:building_delete' building.pk %}"
+                                   class="btn btn-outline-danger" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1">الأولى</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">السابقة</a>
+        </li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">
+                صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">التالية</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">الأخيرة</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .building-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .building-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .building-info .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .building-info .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .progress {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+    
+    .badge {
+        padding: 0.35em 0.65em;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle between grid and list view
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+        const viewButtons = document.querySelectorAll('[data-view]');
+        
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const view = this.dataset.view;
+                
+                // Update active button
+                viewButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Toggle views
+                if (view === 'grid') {
+                    gridView.classList.remove('d-none');
+                    listView.classList.add('d-none');
+                } else {
+                    gridView.classList.add('d-none');
+                    listView.classList.remove('d-none');
+                }
+                
+                // Save preference
+                localStorage.setItem('buildingView', view);
+            });
+        });
+        
+        // Load saved view preference
+        const savedView = localStorage.getItem('buildingView');
+        if (savedView === 'list') {
+            document.querySelector('[data-view="list"]').click();
+        }
+    });
+</script>
+{% endblock %}

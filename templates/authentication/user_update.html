@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}تعديل المستخدم - {{ object.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <a href="{% url 'auth_app:user-detail' object.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right"></i> العودة للملف الشخصي
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit"></i> تعديل معلومات المستخدم
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Current User Info Display -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>تعديل معلومات:</strong> {{ object.username }}
+                    </div>
+                    
+                    <!-- First Name -->
+                    <div class="mb-3">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                            <i class="fas fa-user"></i> الاسم الأول *
+                        </label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.first_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Last Name -->
+                    <div class="mb-3">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                            <i class="fas fa-user"></i> اسم العائلة *
+                        </label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.last_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <i class="fas fa-envelope"></i> البريد الإلكتروني *
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            سيتم استخدام هذا البريد للتواصل والإشعارات
+                        </div>
+                    </div>
+                    
+                    <!-- Non-field errors -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Buttons -->
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'auth_app:user-detail' object.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Additional Info Card -->
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> ملاحظات هامة
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>لا يمكن تعديل اسم المستخدم بعد إنشاء الحساب</li>
+                    <li>تأكد من إدخال بريد إلكتروني صحيح وفعال</li>
+                    <li>سيتم إرسال إشعار عند تغيير البريد الإلكتروني</li>
+                    {% if user.is_superuser and object != user %}
+                    <li>يمكن للمشرف تعديل صلاحيات المستخدم من صفحة إدارة الصلاحيات</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        {% if user.is_superuser and object != user %}
+        <!-- Admin Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-tools"></i> إجراءات المشرف
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'permission-management' object.pk %}" class="btn btn-warning">
+                        <i class="fas fa-key"></i> إدارة الصلاحيات
+                    </a>
+                    <a href="{% url 'user-delete' object.pk %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> حذف المستخدم
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

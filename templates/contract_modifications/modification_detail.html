@@ -1,0 +1,463 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تفاصيل التعديل - {{ modification.contract.contract_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    .detail-value {
+        font-size: 1.1rem;
+        color: #212529;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        padding-bottom: 30px;
+    }
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item:last-child:before {
+        display: none;
+    }
+    .timeline-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .status-badge-large {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'rent:modification_list' %}">التعديلات</a></li>
+                    <li class="breadcrumb-item active">تفاصيل التعديل</li>
+                </ol>
+            </nav>
+            <h2 class="mb-0">
+                <i class="fas fa-edit text-primary"></i>
+                {{ modification.get_modification_type_display }}
+            </h2>
+        </div>
+        <div>
+            <a href="{% url 'rent:modification_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right"></i> رجوع
+            </a>
+            {% if not modification.is_applied %}
+                {% if perms.rent.change_contractmodification %}
+                <a href="{% url 'rent:edit_modification' modification.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> تعديل
+                </a>
+                {% endif %}
+                {% if perms.rent.apply_contractmodification %}
+                <form method="post" class="d-inline" onsubmit="return confirm('هل أنت متأكد من تطبيق هذا التعديل؟')">
+                    {% csrf_token %}
+                    <button type="submit" name="apply" class="btn btn-success">
+                        <i class="fas fa-check"></i> تطبيق التعديل
+                    </button>
+                </form>
+                {% endif %}
+                {% if perms.rent.delete_contractmodification %}
+                <a href="{% url 'rent:delete_modification' modification.id %}" class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> حذف
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Details -->
+        <div class="col-lg-8 mb-4">
+            <!-- Contract Info -->
+            <div class="card detail-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-contract"></i>
+                        معلومات العقد
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-label">رقم العقد</div>
+                            <div class="detail-value">
+                                <a href="{% url 'rent:contract_detail' modification.contract.id %}">
+                                    {{ modification.contract.contract_number }}
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-label">المستأجر</div>
+                            <div class="detail-value">{{ modification.contract.tenant.name }}</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="detail-label">قيمة الإيجار الحالية</div>
+                            <div class="detail-value">{{ modification.contract.annual_rent }} ريال</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="detail-label">تاريخ البداية</div>
+                            <div class="detail-value">{{ modification.contract.start_date|date:"Y-m-d" }}</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="detail-label">تاريخ الانتهاء</div>
+                            <div class="detail-value">{{ modification.contract.end_date|date:"Y-m-d" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modification Details -->
+            <div class="card detail-card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        تفاصيل التعديل
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-label">نوع التعديل</div>
+                            <div class="detail-value">
+                                <span class="badge bg-info fs-6">{{ modification.get_modification_type_display }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="detail-label">تاريخ السريان</div>
+                            <div class="detail-value">{{ modification.effective_date|date:"Y-m-d" }}</div>
+                        </div>
+
+                        <!-- Extension Fields -->
+                        {% if modification.modification_type == 'extension' %}
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">عدد أشهر التمديد</div>
+                                <div class="detail-value text-primary">{{ modification.extension_months }} شهر</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">تاريخ الانتهاء الجديد</div>
+                                <div class="detail-value text-success">{{ modification.new_end_date|date:"Y-m-d" }}</div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Rent Change Fields -->
+                        {% if modification.modification_type == 'rent_increase' or modification.modification_type == 'rent_decrease' %}
+                            <div class="col-md-3 mb-3">
+                                <div class="detail-label">الإيجار القديم</div>
+                                <div class="detail-value">{{ modification.old_rent_amount }} ريال</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="detail-label">الإيجار الجديد</div>
+                                <div class="detail-value text-primary">{{ modification.new_rent_amount }} ريال</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="detail-label">مبلغ التغيير</div>
+                                <div class="detail-value {% if modification.change_amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ modification.change_amount }} ريال
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="detail-label">نسبة التغيير</div>
+                                <div class="detail-value {% if modification.change_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ modification.change_percentage|floatformat:2 }}%
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Discount Fields -->
+                        {% if modification.modification_type == 'discount' %}
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">مبلغ الخصم</div>
+                                <div class="detail-value text-success">{{ modification.discount_amount }} ريال</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">رقم الفترة</div>
+                                <div class="detail-value">الفترة {{ modification.discount_period_number }}</div>
+                            </div>
+                        {% endif %}
+
+                        <!-- VAT Fields -->
+                        {% if modification.modification_type == 'vat' %}
+                            <div class="col-md-4 mb-3">
+                                <div class="detail-label">نسبة القيمة المضافة</div>
+                                <div class="detail-value">{{ modification.vat_percentage }}%</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="detail-label">مبلغ القيمة المضافة</div>
+                                <div class="detail-value text-primary">{{ modification.vat_amount }} ريال</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="detail-label">رقم الفترة</div>
+                                <div class="detail-value">الفترة {{ modification.vat_period_number }}</div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Termination Fields -->
+                        {% if modification.modification_type == 'termination' %}
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">تاريخ الإنهاء الفعلي</div>
+                                <div class="detail-value text-danger">{{ modification.termination_date|date:"Y-m-d" }}</div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <div class="detail-label">سبب الإنهاء</div>
+                                <div class="detail-value">{{ modification.termination_reason }}</div>
+                            </div>
+                            <div class="card mt-4">
+    <div class="card-header" style="background-color: {{ modification.settlement_status.class }};">
+        <h5 class="mb-0 text-white">
+            <i class="fas fa-{{ modification.settlement_status.icon }}"></i>
+            تفاصيل التسوية المالية - {{ modification.settlement_status.label }}
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if modification.settlement_calculation.success %}
+            <div class="row">
+                <!-- معلومات العقد -->
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2">معلومات العقد</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>رقم العقد:</strong></td>
+                            <td>{{ modification.settlement_details.contract_number }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>المستأجر:</strong></td>
+                            <td>{{ modification.settlement_details.tenant_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تاريخ الإنهاء:</strong></td>
+                            <td class="text-danger">{{ modification.settlement_details.termination_date }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- الحسابات المالية -->
+                <div class="col-md-6">
+                    <h6 class="border-bottom pb-2">الحسابات المالية</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>إيجار الفترات الكاملة:</strong></td>
+                            <td>{{ modification.settlement_details.full_periods_rent|floatformat:2 }} ريال</td>
+                        </tr>
+                        <tr>
+                            <td><strong>إيجار الفترة الجزئية:</strong></td>
+                            <td class="text-info">{{ modification.prorated_rent|floatformat:2 }} ريال</td>
+                        </tr>
+                        <tr>
+                            <td><small>({{ modification.settlement_details.days_in_partial_period }} يوم)</small></td>
+                            <td></td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong>إجمالي المستحق:</strong></td>
+                            <td>{{ modification.settlement_details.total_rent_due|floatformat:2 }} ريال</td>
+                        </tr>
+                        <tr>
+                            <td><strong>إجمالي المدفوع:</strong></td>
+                            <td class="text-success">{{ modification.settlement_details.total_paid|floatformat:2 }} ريال</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td><strong>المديونية:</strong></td>
+                            <td class="text-danger">
+                                <strong>{{ modification.outstanding_balance|floatformat:2 }} ريال</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- رسالة التنبيه -->
+            {% if modification.has_outstanding_balance %}
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>تنبيه:</strong> يوجد مديونية متبقية قدرها 
+                <strong>{{ modification.outstanding_balance|floatformat:2 }} ريال</strong>
+                يجب تحصيلها قبل إغلاق الملف.
+            </div>
+            {% elif modification.outstanding_balance < 0 %}
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i>
+                <strong>ملاحظة:</strong> يوجد رصيد زائد للمستأجر قدره 
+                <strong>{{ modification.outstanding_balance|floatformat:2 }} ريال</strong>
+                يجب إعادته أو خصمه من التأمين.
+            </div>
+            {% else %}
+            <div class="alert alert-success mt-3">
+                <i class="fas fa-check-circle"></i>
+                <strong>ممتاز:</strong> لا توجد مديونية. الحساب متوازن.
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle"></i>
+                خطأ في حساب التسوية: {{ modification.settlement_calculation.error }}
+            </div>
+        {% endif %}
+        
+        <!-- أزرار الإجراءات -->
+        <div class="text-end mt-3">
+            <a href="{% url 'rent:modification_settlement_report' modification.pk %}" 
+               class="btn btn-primary" target="_blank">
+                <i class="fas fa-print"></i>
+                طباعة تقرير التسوية
+            </a>
+            
+            {% if modification.has_outstanding_balance %}
+            <a href="{% url 'rent:create_receipt' %}?contract={{ modification.contract.id }}&amount={{ modification.outstanding_balance }}" 
+               class="btn btn-success">
+                <i class="fas fa-money-bill"></i>
+                تسجيل دفعة
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+                        {% endif %}
+
+                        <!-- Description & Notes -->
+                        {% if modification.description %}
+                            <div class="col-12 mb-3">
+                                <div class="detail-label">الوصف</div>
+                                <div class="detail-value">{{ modification.description }}</div>
+                            </div>
+                        {% endif %}
+                        {% if modification.notes %}
+                            <div class="col-12 mb-3">
+                                <div class="detail-label">ملاحظات</div>
+                                <div class="detail-value">{{ modification.notes }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Status Card -->
+            <div class="card detail-card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        حالة التعديل
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if modification.is_applied %}
+                        <span class="badge bg-success status-badge-large mb-3">
+                            <i class="fas fa-check-circle"></i> مُطبّق
+                        </span>
+                        <p class="mb-2"><strong>تاريخ التطبيق:</strong></p>
+                        <p class="text-muted">{{ modification.applied_at|date:"Y-m-d H:i" }}</p>
+                        {% if modification.applied_by %}
+                            <p class="mb-2"><strong>طُبّق بواسطة:</strong></p>
+                            <p class="text-muted">{{ modification.applied_by.username }}</p>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-warning status-badge-large mb-3">
+                            <i class="fas fa-clock"></i> قيد الانتظار
+                        </span>
+                        <p class="text-muted">لم يتم تطبيق التعديل بعد</p>
+                        {% if can_apply %}
+                            <form method="post" onsubmit="return confirm('هل أنت متأكد من تطبيق هذا التعديل؟')">
+                                {% csrf_token %}
+                                <button type="submit" name="apply" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-check"></i> تطبيق الآن
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Creation Info -->
+            <div class="card detail-card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        معلومات الإنشاء
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-plus text-primary" style="font-size: 10px;"></i>
+                        </div>
+                        <div>
+                            <strong>تاريخ الإنشاء</strong>
+                            <p class="text-muted mb-0">{{ modification.created_at|date:"Y-m-d H:i" }}</p>
+                        </div>
+                    </div>
+                    {% if modification.created_by %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon">
+                                <i class="fas fa-user text-primary" style="font-size: 10px;"></i>
+                            </div>
+                            <div>
+                                <strong>أنشئ بواسطة</strong>
+                                <p class="text-muted mb-0">{{ modification.created_by.username }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if modification.updated_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon">
+                                <i class="fas fa-edit text-primary" style="font-size: 10px;"></i>
+                            </div>
+                            <div>
+                                <strong>آخر تحديث</strong>
+                                <p class="text-muted mb-0">{{ modification.updated_at|date:"Y-m-d H:i" }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="card detail-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list"></i>
+                        الملخص
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ modification.get_summary }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

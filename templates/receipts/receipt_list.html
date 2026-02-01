@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}سندات القبض{% endblock %}
+
+{% block page_title %}
+    <div class="d-flex align-items-center">
+        <i class="fas fa-receipt text-primary me-2"></i>
+        سندات القبض
+    </div>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if perms.rent.add_receipt %}
+    <a href="{% url 'rent:receipt_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> سند جديد
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
+        <i class="fas fa-filter"></i> تصفية
+    </button>
+    {% if perms.rent.export_receipt_pdf %}
+    <button type="button" class="btn btn-info" onclick="exportData()">
+        <i class="fas fa-file-excel"></i> تصدير
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Search and Filter Bar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="search-form">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="البحث برقم السند، العقد، أو المستأجر..."
+                               value="{{ request.GET.search }}">
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <select name="status" class="form-select">
+                        <option value="">جميع الحالات</option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>مسودة</option>
+                        <option value="posted" {% if request.GET.status == 'posted' %}selected{% endif %}>مرحل</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>ملغي</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control" 
+                           placeholder="من تاريخ" value="{{ request.GET.date_from }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <input type="date" name="date_to" class="form-control" 
+                           placeholder="إلى تاريخ" value="{{ request.GET.date_to }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        <a href="{% url 'rent:receipt_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Receipts Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if receipts %}
+        <div class="table-responsive">
+            <table class="table table-hover receipts-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم السند</th>
+                        <th>التاريخ</th>
+                        <th>العقد</th>
+                        <th>المستأجر</th>
+                        <th>المبلغ</th>
+                        <th>طريقة الدفع</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts %}
+                    <tr class="receipt-row" data-receipt-id="{{ receipt.id }}" data-url="{% url 'rent:receipt_detail' receipt.pk %}" data-delete-url="{% url 'rent:receipt_delete' receipt.pk %}">
+                        <td>
+                            <strong class="text-primary">{{ receipt.receipt_number }}</strong>
+                        </td>
+                        <td>{{ receipt.receipt_date|date:"Y/m/d" }}</td>
+                        <td>
+                            <a href="{% url 'rent:contract_detail' receipt.contract.pk %}" 
+                               class="text-decoration-none">
+                                {{ receipt.contract.contract_number }}
+                            </a>
+                        </td>
+                        <td>{{ receipt.contract.tenant.name }}</td>
+                        <td>
+                            <strong class="text-success">{{ receipt.amount|floatformat:2 }}</strong>
+                            <small class="text-muted">ريال</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-payment-{{ receipt.payment_method }}">
+                                {{ receipt.get_payment_method_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if receipt.status == 'draft' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-file-alt"></i> مسودة
+                            </span>
+                            {% elif receipt.status == 'posted' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> مرحل
+                            </span>
+                            {% elif receipt.status == 'cancelled' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-ban"></i> ملغي
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'rent:receipt_detail' receipt.pk %}"
+                                   class="btn btn-outline-primary" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                {% if receipt.status == 'draft' and perms.rent.change_receipt %}
+                                <a href="{% url 'rent:receipt_update' receipt.pk %}"
+                                   class="btn btn-outline-warning" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+
+                                {% if perms.rent.print_receipt %}
+                                <a href="{% url 'rent:receipt_print' receipt.pk %}"
+                                   class="btn btn-outline-info" title="طباعة" target="_blank">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                                {% endif %}
+
+                                {% if receipt.status == 'draft' and perms.rent.delete_receipt %}
+                                <button type="button" class="btn btn-outline-danger"
+                                        title="حذف" onclick="deleteReceipt({{ receipt.pk }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="4" class="text-end"><strong>الإجمالي:</strong></td>
+                        <td colspan="4">
+                            <strong class="text-success fs-5">
+                                {{ total_amount|floatformat:2 }} ريال
+                            </strong>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">الأولى</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">السابق</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">التالي</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">الأخيرة</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-receipt fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">لا توجد سندات قبض</h5>
+            <p class="text-muted">ابدأ بإضافة سند قبض جديد</p>
+            {% if perms.rent.add_receipt %}
+            <a href="{% url 'rent:receipt_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> إضافة سند جديد
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ receipts.count }}</h3>
+                <p class="stat-label">إجمالي السندات</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ posted_count }}</h3>
+                <p class="stat-label">سندات مرحلة</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ draft_count }}</h3>
+                <p class="stat-label">مسودات</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ total_amount|floatformat:2 }}</h3>
+                <p class="stat-label">إجمالي المبالغ (ريال)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/receipt_list.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/receipt_list.js' %}"></script>
+{% endblock %}

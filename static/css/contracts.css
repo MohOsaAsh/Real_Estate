@@ -1,0 +1,86 @@
+
+
+.contract-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.contract-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 0;
+}
+
+.step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #dee2e6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-circle {
+    border-color: #0d6efd;
+    background: #0d6efd;
+    color: white;
+}
+
+.step.completed .step-circle {
+    border-color: #198754;
+    background: #198754;
+    color: white;
+}
+
+.step-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.step.active .step-label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.selected-units-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.unit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #e7f3ff;
+    border: 1px solid #0d6efd;
+    border-radius: 8px;
+    color: #0d6efd;
+    font-weight: 500;
+}
+
+.unit-badge .remove-unit {
+    cursor: pointer;
+    color: #dc3545;
+    font-weight: bold;
+}

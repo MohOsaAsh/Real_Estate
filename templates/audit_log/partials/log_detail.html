@@ -1,0 +1,25 @@
+<!-- تفاصيل السجل (partial للـ HTMX) -->
+<div class="p-3">
+    <h6>{{ log.get_action_display }} - {{ log.model_name }}</h6>
+    <p><strong>المستخدم:</strong> {{ log.user_name }}</p>
+    <p><strong>التاريخ:</strong> {{ log.created_at|date:"Y/m/d H:i:s" }}</p>
+    <p><strong>الوصف:</strong> {{ log.object_repr }}</p>
+    {% if log.changes %}
+    <hr>
+    <h6>التغييرات:</h6>
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr><th>الحقل</th><th>قبل</th><th>بعد</th></tr>
+        </thead>
+        <tbody>
+            {% for field, values in log.changes.items %}
+            <tr>
+                <td>{{ field }}</td>
+                <td class="text-danger">{{ values.old|default:"-" }}</td>
+                <td class="text-success">{{ values.new|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>

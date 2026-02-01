@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% load humanize %}
+
+{% block title %}تفاصيل العقد - {{ contract.contract_number }}{% endblock %}
+
+{% block page_title %}تفاصيل العقد - {{ contract.contract_number }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if perms.rent.change_contract %}
+    <a href="{% url 'rent:contract_update' contract.pk %}" class="btn btn-warning">
+        <i class="fas fa-edit"></i> تعديل
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-secondary" onclick="window.print()">
+        <i class="fas fa-print"></i> طباعة
+    </button>
+    {% if contract.status == 'draft' and perms.rent.activate_contract %}
+    <form method="post" action="{% url 'rent:contract_activate' contract.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-check"></i> تفعيل العقد
+        </button>
+    </form>
+    {% elif contract.status == 'active' and perms.rent.terminate_contract %}
+    <a href="{% url 'rent:contract_terminate' contract.pk %}" class="btn btn-danger">
+        <i class="fas fa-times"></i> إنهاء العقد
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- معلومات العقد الأساسية -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-contract"></i> معلومات العقد</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم العقد</label>
+                        <div class="fw-bold">{{ contract.contract_number }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">الحالة</label>
+                        <div>
+                            {% if contract.status == 'draft' %}
+                            <span class="badge bg-secondary">مسودة</span>
+                            {% elif contract.status == 'active' %}
+                            <span class="badge bg-success">نشط</span>
+                            {% elif contract.status == 'terminated' %}
+                            <span class="badge bg-danger">منتهي</span>
+                            {% elif contract.status == 'cancelled' %}
+                            <span class="badge bg-warning">ملغي</span>
+                            {% elif contract.status == 'expired' %}
+                            <span class="badge bg-dark">منتهي الصلاحية</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">المستأجر</label>
+                        <div class="fw-bold">
+                            <a href="{% url 'rent:tenant_detail' contract.tenant.pk %}">
+                                {{ contract.tenant.name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">رقم الهاتف</label>
+                        <div>{{ contract.tenant.phone }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">تاريخ البداية</label>
+                        <div class="fw-bold">{{ contract.start_date }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">تاريخ النهاية</label>
+                        <div class="fw-bold">{{ contract.end_date }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">قيمة الإيجار</label>
+                        <div class="fw-bold text-primary fs-5">
+                            {{ contract.annual_rent|floatformat:2|intcomma }} ريال
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">دورية السداد</label>
+                        <div>{{ contract.get_payment_frequency_display }}</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="text-muted small">الوحدات</label>
+                        <div>
+                            {% for unit in contract.units.all %}
+                            <span class="badge bg-info me-1">{{ unit.building.name }} - {{ unit.unit_number }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if contract.notes %}
+                    <div class="col-12">
+                        <label class="text-muted small">ملاحظات</label>
+                        <div class="text-muted">{{ contract.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ملخص مالي -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> الملخص المالي</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-md-3">
+                        <div class="summary-box">
+                            <div class="text-muted small">إجمالي المستحق</div>
+                            <div class="fw-bold fs-4">{{ summary.total_contract_value|floatformat:2|intcomma }}</div>
+                            <div class="text-muted small">ريال</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-box">
+                            <div class="text-muted small">إجمالي المدفوع</div>
+                            <div class="fw-bold fs-4 text-success">{{ summary.total_paid|floatformat:2|intcomma }}</div>
+                            <div class="text-muted small">ريال</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-box">
+                            <div class="text-muted small">المتبقي</div>
+                            <div class="fw-bold fs-4 text-danger">{{ summary.outstanding|floatformat:2|intcomma }}</div>
+                            <div class="text-muted small">ريال</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-box">
+                            <div class="text-muted small">عدد الفترات</div>
+                            <div class="fw-bold fs-4">{{ summary.total_periods|intcomma }}</div>
+                            <div class="text-muted small">فترة</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- جدول الفترات -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> جدول الفترات</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الفترة</th>
+                                <th>من</th>
+                                <th>إلى</th>
+                                <th>المبلغ</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for period in periods %}
+                            <tr class="period-row {% if period.status == 'overdue' %}table-danger{% elif period.status == 'current' %}table-warning{% endif %}">
+                                <td>{{ period.period_number }}</td>
+                                <td>{{ period.start_date }}</td>
+                                <td>{{ period.end_date }}</td>
+                                <td class="fw-bold">{{ period.due_amount|floatformat:2|intcomma }} ريال</td>
+                                <td>
+                                    {% if period.status == 'overdue' %}
+                                    <span class="badge bg-danger">متأخر</span>
+                                    {% elif period.status == 'current' %}
+                                    <span class="badge bg-warning">حالي</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">مستقبلي</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- سندات القبض -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-receipt"></i> سندات القبض</h5>
+                {% if perms.rent.add_receipt %}
+                <a href="{% url 'rent:receipt_create' %}?contract={{ contract.pk }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> سند جديد
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if receipts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم السند</th>
+                                <th>التاريخ</th>
+                                <th>المبلغ</th>
+                                <th>طريقة الدفع</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for receipt in receipts %}
+                            <tr>
+                                <td>{{ receipt.receipt_number }}</td>
+                                <td>{{ receipt.receipt_date }}</td>
+                                <td class="fw-bold">{{ receipt.amount|floatformat:2|intcomma }} ريال</td>
+                                <td>{{ receipt.get_payment_method_display }}</td>
+                                <td>
+                                    {% if receipt.status == 'posted' %}
+                                    <span class="badge bg-success">مرحل</span>
+                                    {% elif receipt.status == 'draft' %}
+                                    <span class="badge bg-secondary">مسودة</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">ملغي</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'rent:receipt_detail' receipt.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'rent:receipt_print' receipt.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>لا توجد سندات قبض</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- الشريط الجانبي -->
+    <div class="col-lg-4">
+        <!-- إجراءات سريعة -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> إجراءات سريعة</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if perms.rent.add_receipt %}
+                    <a href="{% url 'rent:receipt_create' %}?contract={{ contract.pk }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> إضافة دفعة
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-primary" onclick="window.print()">
+                        <i class="fas fa-print"></i> طباعة العقد
+                    </button>
+                    {% if perms.rent.view_contract_statement %}
+                    <a href="{% url 'rent:contract_statement' contract.pk %}" class="btn btn-info">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        كشف الحساب
+                    </a>
+                    {% endif %}
+                    {% if perms.rent.change_contract %}
+                    <a href="{% url 'rent:contract_update' contract.pk %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> تعديل العقد
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- التعديلات -->
+        {% if modifications %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-history"></i> التعديلات</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for mod in modifications %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ mod.get_modification_type_display }}</h6>
+                                <small class="text-muted">{{ mod.effective_date }}</small>
+                            </div>
+                            <span class="badge bg-primary">
+                                {% if mod.amount %}{{ mod.amount|intcomma }} ريال{% endif %}
+                                {% if mod.percentage %}{{ mod.percentage }}%{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/contracts.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/contracts.js' %}"></script>
+{% endblock %}

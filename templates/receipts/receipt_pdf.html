@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>سند قبض {{ receipt.receipt_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin-top: 4cm;
+            margin-bottom: 2cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+
+            {% if is_download and background_path %}
+            background-image: url('{{ background_path }}');
+            background-position: center;
+            background-size: cover;
+            {% endif %}
+
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 0.5cm;
+                margin-left: 1.5cm;
+                margin-right: 1.5cm;
+                height: 2cm;
+            }
+        }
+
+        body {
+            font-family: 'Arabic';
+            font-size: 14px;
+            color: #222;
+            direction: rtl;
+        }
+
+        /* ==================== Header ==================== */
+        .header-table {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .receipt-title {
+            background-color: #1a5276;
+            color: #fff;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 5px 0;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .receipt-title-en {
+            font-size: 18px;
+            font-weight: normal;
+            color: #d5e8f0;
+            display: block;
+            margin-top: 0;
+        }
+
+        /* ==================== Info Row ==================== */
+        .info-row {
+            width: 100%;
+            margin-bottom: 12px;
+            margin-top: 12px;
+        }
+
+        .info-box {
+            border: 2px solid #1a5276;
+            padding: 6px 12px;
+            text-align: center;
+            border-radius: 4px;
+            background-color: #f7fbfe;
+        }
+
+        .info-box-label {
+            font-size: 11px;
+            color: #666;
+            display: block;
+        }
+
+        .info-box-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a5276;
+        }
+
+        .amount-box {
+            border: 2px solid #c0392b;
+            background-color: #fdf2f2;
+        }
+
+        .amount-box .info-box-value {
+            color: #c0392b;
+            font-size: 18px;
+        }
+
+        .date-box {
+            border: 2px solid #7d8c8e;
+            background-color: #f8f9f9;
+        }
+
+        .date-box .info-box-value {
+            color: #333;
+        }
+
+        /* ==================== Main Content ==================== */
+        .content-section {
+            width: 100%;
+            border: 1px solid #d5d8dc;
+            border-radius: 4px;
+            padding: 0;
+            margin-bottom: 15px;
+        }
+
+        .section-header {
+            background-color: #eaf2f8;
+            border-bottom: 2px solid #1a5276;
+            padding: 6px 12px;
+            font-weight: bold;
+            font-size: 15px;
+            color: #1a5276;
+            text-align: center;
+        }
+
+        .section-body {
+            padding: 10px 12px;
+        }
+
+        /* ==================== Data Table ==================== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table td {
+            padding: 6px 8px;
+            vertical-align: top;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #555;
+            width: 22%;
+            text-align: right;
+            font-size: 14px;
+            background-color: #f9f9f9;
+            border-left: 1px solid #eee;
+        }
+
+        .field-value {
+            color: #222;
+            font-weight: bold;
+            font-size: 15px;
+            text-align: right;
+        }
+
+        /* ==================== Payment Method ==================== */
+        .payment-method-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+        }
+
+        .payment-method-table td {
+            padding: 5px 8px;
+            text-align: center;
+            border: 1px solid #e5e5e5;
+        }
+
+        .pm-label {
+            font-size: 12px;
+            color: #777;
+            font-weight: bold;
+        }
+
+        .pm-value {
+            font-size: 15px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        /* ==================== Periods ==================== */
+        .period-item {
+            display: block;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ddd;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .period-item:last-child {
+            border-bottom: none;
+        }
+
+        /* ==================== Amount in Words ==================== */
+        .amount-words-box {
+            background-color: #fef9e7;
+            border: 1px solid #f9e79f;
+            border-radius: 3px;
+            padding: 8px 12px;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .amount-words-label {
+            font-size: 12px;
+            color: #7d6608;
+        }
+
+        .amount-words-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #7d6608;
+        }
+
+        /* ==================== Signatures ==================== */
+        
+
+        /* ==================== Footer ==================== */
+        .footer-content {
+            text-align: center;
+            font-size: 9px;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 5px;
+        }
+
+        /* ==================== Status Badge ==================== */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .status-posted {
+            background-color: #27ae60;
+        }
+
+        .status-draft {
+            background-color: #f39c12;
+        }
+
+        .status-cancelled {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+<br>
+    <!-- ==================== Title ==================== -->
+    <table class="header-table">
+        <tr>
+            <td class="receipt-title">
+                سند قبض
+                <span class="receipt-title-en">RECEIPT VOUCHER</span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ==================== Info Row: Number / Date / Amount ==================== -->
+    <table class="info-row">
+        <tr>
+            <td width="33%">
+                <div class="info-box amount-box">
+                    <span class="info-box-label">المبلغ </span>
+                    <span class="info-box-value">{{ receipt.amount|floatformat:2 }} ريال</span>
+                </div>
+            </td>
+            <td width="34%">
+                <div class="info-box date-box">
+                    <span class="info-box-label">التاريخ </span>
+                    <span class="info-box-value">{{ receipt.receipt_date|date:"Y/m/d" }}</span>
+                </div>
+            </td>
+            <td width="33%">
+                <div class="info-box">
+                    <span class="info-box-label">رقم السند </span>
+                    <span class="info-box-value">{{ receipt.receipt_number }}</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ==================== Tenant & Contract Info ==================== -->
+    <div class="content-section">
+        <div class="section-header">بيانات المستأجر والعقد</div>
+        <div class="section-body">
+            <table class="data-table">
+                <tr>
+                    <td class="field-value">{{ receipt.contract.tenant.name }}</td>
+                    <td class="field-label">استلمنا من</td>
+                </tr>
+                <tr>
+                    <td class="field-value">{{ unit_numbers|default:"-" }}</td>
+                    <td class="field-label">الوحدة</td>
+                </tr>
+                <tr>
+                    <td class="field-value">{{ location|default:"-" }}</td>
+                    <td class="field-label">الموقع</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== Amount in Words ==================== -->
+    <div class="amount-words-box">
+      
+        <span class="amount-words-value">{{ receipt.amount_in_words }}</span>
+    </div>
+
+    <!-- ==================== Payment Method ==================== -->
+    <div class="content-section">
+        <div class="section-header">طريقة الدفع </div>
+        <div class="section-body">
+            <table class="payment-method-table">
+                <tr>
+                    <td width="33%">
+                        <span class="pm-label">بموجب </span><br>
+                        <span class="pm-value">
+                            {% if receipt.payment_method == 'check' %}
+                                شيك رقم {{ receipt.check_number }}
+                            {% elif receipt.payment_method == 'bank_transfer' %}
+                                تحويل بنكي
+                            {% else %}
+                                نقداً
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td width="34%">
+                        <span class="pm-label">التاريخ </span><br>
+                        <span class="pm-value">
+                            {% if receipt.payment_method == 'check' and receipt.check_date %}
+                                {{ receipt.check_date|date:"Y/m/d" }}
+                            {% else %}
+                                {{ receipt.receipt_date|date:"Y/m/d" }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td width="33%">
+                        <span class="pm-label">البنك </span><br>
+                        <span class="pm-value">{{ receipt.bank_name|default:"-" }}</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== Purpose / Covered Periods ==================== -->
+    <div class="content-section">
+        <div class="section-header">وذلك عن </div>
+        <div class="section-body">
+            {% if covered_periods %}
+                {% for period in covered_periods %}
+                    <span class="period-item">
+                       - {{ period.allocated_amount|floatformat:2 }} ريال-
+                        من {{ period.start_date|date:"Y/m/d" }} إلى {{ period.end_date|date:"Y/m/d" }}
+                         - {{ period.description }}
+                        
+                    </span>
+                {% endfor %}
+            {% else %}
+                <span class="field-value">دفعة من حساب العقد</span>
+            {% endif %}
+
+            {% if receipt.notes %}
+                <br>
+                <span style="color: #666; font-size: 11px;">ملاحظات: {{ receipt.notes }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ==================== Company Name ==================== -->
+    <table width="100%" style="margin-top: 20px;">
+        <tr>
+            <td style="text-align: center; font-size: 24px; font-weight: bold; color: #1a5276; letter-spacing: 2px;">
+                شركة اعمار الخليجية
+            </td>
+        </tr>        
+    </table>
+
+    <!-- ==================== Footer ==================== -->
+    <div id="footerContent">
+        <div class="footer-content">
+            {{ site_url }} | System Generated Receipt | {{ now|date:"Y/m/d H:i" }}
+        </div>
+    </div>
+
+</body>
+
+</html>

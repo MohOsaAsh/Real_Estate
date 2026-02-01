@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}تعديل الأرض{% else %}أرض جديدة{% endif %}{% endblock %}
+
+{% block page_title %}{% if object %}تعديل الأرض - {{ object.name }}{% else %}إضافة أرض جديدة{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-map-marked-alt"></i>
+                    {% if object %}تعديل بيانات الأرض{% else %}معلومات الأرض الجديدة{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- معلومات أساسية -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-info-circle"></i> معلومات أساسية
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">
+                                    اسم الأرض <span class="text-danger">*</span>
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.deed_number.id_for_label }}" class="form-label">
+                                    رقم الصك <span class="text-danger">*</span>
+                                </label>
+                                {{ form.deed_number }}
+                                {% if form.deed_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.deed_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.area.id_for_label }}" class="form-label">
+                                    المساحة (متر مربع) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.area }}
+                                {% if form.area.errors %}
+                                <div class="invalid-feedback d-block">{{ form.area.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.owner_name.id_for_label }}" class="form-label">
+                                    اسم المالك <span class="text-danger">*</span>
+                                </label>
+                                {{ form.owner_name }}
+                                {% if form.owner_name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.owner_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نوع الملكية -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-certificate"></i> نوع الملكية
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.ownership_type.id_for_label }}" class="form-label">
+                                    نوع الملكية <span class="text-danger">*</span>
+                                </label>
+                                {{ form.ownership_type }}
+                                {% if form.ownership_type.errors %}
+                                <div class="invalid-feedback d-block">{{ form.ownership_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- معلومات الإيجار (تظهر إذا كان النوع إيجار) -->
+                    <div id="rent-info" class="form-section mb-4" style="display: none;">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-calendar-alt"></i> معلومات الإيجار
+                        </h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            املأ هذه البيانات فقط إذا كانت الأرض إيجار
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.rent_start_date.id_for_label }}" class="form-label">
+                                    تاريخ بداية الإيجار
+                                </label>
+                                {{ form.rent_start_date }}
+                                {% if form.rent_start_date.errors %}
+                                <div class="invalid-feedback d-block">{{ form.rent_start_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="{{ form.rent_duration_years.id_for_label }}" class="form-label">
+                                    مدة الإيجار (سنوات)
+                                </label>
+                                {{ form.rent_duration_years }}
+                                {% if form.rent_duration_years.errors %}
+                                <div class="invalid-feedback d-block">{{ form.rent_duration_years.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="{{ form.rent_end_date.id_for_label }}" class="form-label">
+                                    تاريخ نهاية الإيجار
+                                </label>
+                                {{ form.rent_end_date }}
+                                {% if form.rent_end_date.errors %}
+                                <div class="invalid-feedback d-block">{{ form.rent_end_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ملاحظات -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title mb-3">
+                            <i class="fas fa-sticky-note"></i> ملاحظات
+                        </h6>
+                        <div class="row">
+                            <div class="col-12">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                    ملاحظات إضافية
+                                </label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الحالة -->
+                    <div class="form-section mb-4">
+                        <div class="form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                الأرض نشطة
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'rent:land_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if object %}حفظ التعديلات{% else %}حفظ{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/lands.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/lands.js' %}"></script>
+
+{% endblock %}

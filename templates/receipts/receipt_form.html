@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}تعديل سند قبض{% else %}سند قبض جديد{% endif %}
+{% endblock %}
+
+{% block page_title %}
+    <div class="d-flex align-items-center">
+        <i class="fas fa-receipt text-primary me-2"></i>
+        {% if form.instance.pk %}
+            تعديل سند قبض {{ form.instance.receipt_number }}
+        {% else %}
+            سند قبض جديد
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit text-primary"></i>
+                    {% if form.instance.pk %}تعديل بيانات السند{% else %}بيانات السند الجديد{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="receiptForm" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    <!-- اختيار العقد -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-file-contract text-primary"></i> العقد
+                        </h6>
+                        <div class="row">
+                            <div class="col-12">
+                                <label for="{{ form.contract.id_for_label }}" class="form-label required">
+                                    {{ form.contract.label }}
+                                </label>
+                                {{ form.contract }}
+                                {% if form.contract.errors %}
+                                <div class="invalid-feedback d-block">{{ form.contract.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- بيانات السند -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-receipt text-success"></i> بيانات السند
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.receipt_number.label }}</label>
+                                {{ form.receipt_number }}
+                                <small class="form-text text-muted">يُولد تلقائياً</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">{{ form.receipt_date.label }}</label>
+                                {{ form.receipt_date }}
+                                {% if form.receipt_date.errors %}
+                                <div class="invalid-feedback d-block">{{ form.receipt_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">{{ form.amount.label }}</label>
+                                <div class="input-group">
+                                    {{ form.amount }}
+                                    <span class="input-group-text">ريال</span>
+                                </div>
+                                {% if form.amount.errors %}
+                                <div class="invalid-feedback d-block">{{ form.amount.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required">{{ form.payment_method.label }}</label>
+                                {{ form.payment_method }}
+                                {% if form.payment_method.errors %}
+                                <div class="invalid-feedback d-block">{{ form.payment_method.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تفاصيل الدفع -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-credit-card text-info"></i> تفاصيل الدفع
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.reference_number.label }}</label>
+                                {{ form.reference_number }}
+                            </div>
+                            <div class="col-md-6" id="checkNumberField" style="display: none;">
+                                <label class="form-label">رقم الشيك</label>
+                                <input type="text" id="check_number" name="check_number" class="form-control"
+                                       placeholder="رقم الشيك" value="{{ form.instance.check_number }}">
+                            </div>
+                            <div class="col-md-6" id="checkDateField" style="display: none;">
+                                <label class="form-label">تاريخ الشيك</label>
+                                <input type="date" id="check_date" name="check_date" class="form-control"
+                                       value="{{ form.instance.check_date|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-6" id="bankNameField" style="display: none;">
+                                <label class="form-label">اسم البنك</label>
+                                <input type="text" id="bank_name" name="bank_name" class="form-control"
+                                       placeholder="اسم البنك" value="{{ form.instance.bank_name }}">
+                            </div>
+                            <div class="col-md-12" id="paymentProofField" style="display: none;">
+                                <label class="form-label">
+                                    <i class="fas fa-image text-info"></i> صورة إثبات الدفع (شيك أو تحويل)
+                                </label>
+                                {{ form.payment_proof }}
+                                <small class="form-text text-muted">
+                                    يُقبل: صور (JPG, PNG) أو ملفات PDF
+                                </small>
+                                {% if form.instance.payment_proof %}
+                                <div class="mt-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        يوجد ملف مرفق حالياً: {{ form.instance.payment_proof.name|cut:"receipts/payment_proofs/" }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الحالة والملاحظات -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-cog text-secondary"></i> إعدادات
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">{{ form.status.label }}</label>
+                                {{ form.status }}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">{{ form.notes.label }}</label>
+                                {{ form.notes }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- أزرار الحفظ -->
+                    <div class="form-actions d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{% url 'rent:receipt_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> حفظ السند
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-label.required::after {
+        content: " *";
+        color: red;
+    }
+    .section-title {
+        font-weight: 600;
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+    }
+    .form-section {
+        background: #fafafa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethod = document.getElementById('id_payment_method');
+    const checkNumberField = document.getElementById('checkNumberField');
+    const checkDateField = document.getElementById('checkDateField');
+    const bankNameField = document.getElementById('bankNameField');
+    const paymentProofField = document.getElementById('paymentProofField');
+
+    function togglePaymentFields() {
+        if (!paymentMethod) return;
+        const method = paymentMethod.value;
+        const isCheck = method === 'check';
+        const isBankTransfer = method === 'bank_transfer';
+
+        if (checkNumberField) checkNumberField.style.display = isCheck ? 'block' : 'none';
+        if (checkDateField) checkDateField.style.display = isCheck ? 'block' : 'none';
+        if (bankNameField) bankNameField.style.display = (isCheck || isBankTransfer) ? 'block' : 'none';
+        // عرض حقل صورة الإثبات للشيك والتحويل البنكي
+        if (paymentProofField) paymentProofField.style.display = (isCheck || isBankTransfer) ? 'block' : 'none';
+    }
+
+    if (paymentMethod) {
+        paymentMethod.addEventListener('change', togglePaymentFields);
+        togglePaymentFields();
+    }
+});
+</script>
+{% endblock %}

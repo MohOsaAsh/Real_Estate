@@ -1,0 +1,36 @@
+
+
+     /* static/css/buildings.css */
+ 
+/* Buildings Styles */
+.building-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.building-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
+}
+
+.building-icon {
+    opacity: 0.3;
+    transition: opacity 0.3s;
+}
+
+.building-card:hover .building-icon {
+    opacity: 0.8;
+}
+
+.building-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.building-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}

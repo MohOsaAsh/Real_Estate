@@ -1,0 +1,171 @@
+@page {
+    size: A4;
+    /* Large margins to simulate 75% print area and clear letterhead */
+    margin-top: 4cm;
+    /* Space for pre-printed header */
+    margin-bottom: 2cm;
+    margin-left: 2cm;
+    margin-right: 2cm;
+}
+
+        {
+        % if is_download and background_path %
+    }
+
+    background-image: url('{{ background_path }}');
+    background-position: center;
+    background-size: cover;
+
+        {
+        % endif %
+    }
+
+    @frame footer {
+        -pdf-frame-content: footerContent;
+        bottom: 1cm;
+        margin-left: 2cm;
+        margin-right: 2cm;
+        height: 1cm;
+    }
+}
+
+body {
+    font-family: 'Arial', 'Tahoma', sans-serif;
+    font-size: 12px;
+    /* Slightly smaller to fit */
+    color: #000;
+}
+
+/* Container to center and constrain content effectively */
+.main-container {
+    width: 100%;
+}
+
+.info-bar {
+    width: 100%;
+    margin: 10px 0 20px 0;
+}
+
+.receipt-no-box {
+    border: 1px solid #000;
+    padding: 5px 10px;
+    background: #fff;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    width: 100px;
+}
+
+.receipt-title-box {
+    background-color: #e0e0e0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 8px;
+    border: 1px solid #999;
+    width: 60%;
+    margin: 0 auto;
+    border-radius: 4px;
+}
+
+.amount-main-box {
+    border: 2px solid #000;
+    padding: 8px 15px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.main-content {
+    width: 100%;
+    border: 1px solid #999;
+    padding: 15px;
+    background-color: #fdfdfd;
+    border-radius: 4px;
+    /* 
+             * Ensuring lines have space 
+             */
+    line-height: 1.8;
+}
+
+.field-row {
+    margin-bottom: 10px;
+    border-bottom: 1px dotted #ccc;
+    padding-bottom: 3px;
+    width: 100%;
+}
+
+.label {
+    font-weight: bold;
+    color: #333;
+    width: 20%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.value {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    font-size: 13px;
+    width: 78%;
+    display: inline-block;
+    color: #000;
+}
+
+/* Dedicated Payment Table for "3 procedures" */
+.payment-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.payment-table td {
+    padding: 5px;
+    vertical-align: middle;
+}
+
+.payment-label {
+    font-weight: bold;
+    width: auto;
+    background: #eee;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+
+.payment-value {
+    border-bottom: 1px dotted #000;
+    padding: 3px 8px;
+    font-weight: bold;
+}
+
+.signature-section {
+    margin-top: 40px;
+    width: 100%;
+}
+
+.sig-block {
+    text-align: center;
+    width: 33%;
+    vertical-align: bottom;
+    height: 60px;
+}
+
+.sig-line {
+    border-top: 1px solid #000;
+    width: 80%;
+    margin: 0 auto;
+    padding-top: 5px;
+    font-weight: bold;
+}
+
+.en {
+    font-family: sans-serif;
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+
+.period-item {
+    display: block;
+    margin-bottom: 2px;
+}
