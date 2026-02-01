@@ -21,7 +21,6 @@ et_xmlfile==2.0.0
 executing==2.2.1
 fastjsonschema==2.21.2
 freetype-py==2.5.1
-gunicorn==24.1.1
 html5lib==1.1
 idna==3.11
 ipython==8.12.3
@@ -48,9 +47,9 @@ pickleshare==0.7.5
 pillow==12.1.0
 platformdirs==4.5.1
 prompt_toolkit==3.0.52
-psycopg2==2.9.11
 psycopg2-binary==2.9.11
 pure_eval==0.2.3
+pycairo==1.29.0
 pycparser==3.0
 Pygments==2.19.2
 pyHanko==0.32.0
