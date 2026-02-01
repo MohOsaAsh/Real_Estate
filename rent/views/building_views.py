@@ -60,7 +60,7 @@ class BuildingCreateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin
         return response
 
 
-class BuildingUpdateView(LoginRequiredMixin, PermissionCheckMixin,  UpdateView):
+class BuildingUpdateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, UpdateView):
     """تحديث بيانات المبنى"""
     model = Building
     form_class = BuildingForm
@@ -77,7 +77,7 @@ class BuildingUpdateView(LoginRequiredMixin, PermissionCheckMixin,  UpdateView):
 
 
 
-class BuildingDeleteView(LoginRequiredMixin, PermissionCheckMixin,  DeleteView):
+class BuildingDeleteView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, DeleteView):
     """حذف المبنى (حذف ناعم)"""
     model = Building
     template_name = 'buildings/building_confirm_delete.html'

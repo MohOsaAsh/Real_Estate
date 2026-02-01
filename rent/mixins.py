@@ -77,9 +77,9 @@ class AuditLogMixin:
                 model_name=obj.__class__.__name__,
                 object_id=obj.pk,
                 action=action,
-                old_data=old_data,
-                new_data=new_data,
-                user_ip=self.get_client_ip(),
+                old_values=old_data,
+                new_values=new_data,
+                ip_address=self.get_client_ip(),
             )
         except Exception as e:
             # تسجيل الخطأ بدون إيقاف العملية

@@ -1,4 +1,6 @@
 from .common_imports_view import *
+from django.db.models.functions import Cast
+from django.db.models import IntegerField
 
 # ========================================
 # 4. إدارة الوحدات
@@ -30,7 +32,14 @@ class UnitListView(LoginRequiredMixin, PermissionCheckMixin, ListView):
         if building:
             queryset = queryset.filter(building_id=building)
         
-        return queryset.order_by('building', 'floor', 'unit_number')
+        return queryset.annotate(
+            unit_number_int=Cast('unit_number', IntegerField())
+        ).order_by('building', 'floor', 'unit_number_int', 'unit_number')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['buildings'] = Building.objects.filter(is_active=True).order_by('name')
+        return context
 
 
 class UnitDetailView(LoginRequiredMixin, PermissionCheckMixin, DetailView):
@@ -63,7 +72,7 @@ class UnitCreateView(LoginRequiredMixin, PermissionCheckMixin,  AuditLogMixin, C
         return response
 
 
-class UnitUpdateView(LoginRequiredMixin, PermissionCheckMixin,  UpdateView):
+class UnitUpdateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, UpdateView):
     """تحديث بيانات الوحدة"""
     model = Unit
     form_class = UnitForm
@@ -79,7 +88,7 @@ class UnitUpdateView(LoginRequiredMixin, PermissionCheckMixin,  UpdateView):
 
 
 
-class UnitDeleteView(LoginRequiredMixin,  PermissionCheckMixin,  DeleteView):
+class UnitDeleteView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, DeleteView):
     """حذف الوحدة (حذف ناعم)"""
     model = Unit
     template_name = 'units/unit_confirm_delete.html'

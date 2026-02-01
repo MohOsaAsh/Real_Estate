@@ -40,7 +40,9 @@
                 <label class="form-label">المبنى</label>
                 <select name="building" class="form-select">
                     <option value="">الكل</option>
-                    <!-- سيتم ملؤها من Backend -->
+                    {% for building in buildings %}
+                    <option value="{{ building.pk }}" {% if request.GET.building == building.pk|stringformat:"d" %}selected{% endif %}>{{ building.name }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">

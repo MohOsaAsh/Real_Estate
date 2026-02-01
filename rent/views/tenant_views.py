@@ -68,7 +68,7 @@ class TenantCreateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, 
         return super().form_invalid(form)
 
 
-class TenantUpdateView(LoginRequiredMixin, PermissionCheckMixin,  UpdateView):
+class TenantUpdateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, UpdateView):
     """تحديث بيانات المستأجر"""
     model = Tenant
     form_class = TenantForm
@@ -85,7 +85,7 @@ class TenantUpdateView(LoginRequiredMixin, PermissionCheckMixin,  UpdateView):
 
 
 
-class TenantDeleteView(LoginRequiredMixin, PermissionCheckMixin, DeleteView):
+class TenantDeleteView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, DeleteView):
     """حذف المستأجر (حذف ناعم)"""
     model = Tenant
     template_name = 'tenants/tenant_confirm_delete.html'
