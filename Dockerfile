@@ -5,10 +5,12 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# متطلبات النظام (مهمة لـ reportlab / xhtml2pdf)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev \
     gcc \
-    libcairo2 \
+    libpq-dev \
+    pkg-config \
+    libcairo2-dev \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libgdk-pixbuf-2.0-0 \
@@ -17,7 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn psycopg2-binary
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
