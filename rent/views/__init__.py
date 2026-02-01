@@ -11,3 +11,4 @@ from .contract_views import *
 from .contract_modification_views import *
 from .notification_views import *
 from .report_view import *
+from .backup_views import *

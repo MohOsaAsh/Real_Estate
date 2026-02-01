@@ -27,6 +27,14 @@ from rent.views.contract_statement_views import (
     ContractStatementPrintView,
     ContractStatementAPIView
 )
+from rent.views.backup_views import (
+    BackupListView,
+    BackupCreateView,
+    BackupCreateSQLView,
+    BackupDownloadView,
+    BackupRestoreView,
+    BackupDeleteView,
+)
 
 app_name = 'rent'
 
@@ -149,6 +157,16 @@ urlpatterns = [
     path('contracts/<int:pk>/statement/api/',ContractStatementAPIView.as_view(),name='contract_statement_api'),
 
 
+
+    # ========================================
+    # النسخ الاحتياطي
+    # ========================================
+    path('backups/', BackupListView.as_view(), name='backup_list'),
+    path('backups/create/', BackupCreateView.as_view(), name='backup_create'),
+    path('backups/create-sql/', BackupCreateSQLView.as_view(), name='backup_create_sql'),
+    path('backups/restore/', BackupRestoreView.as_view(), name='backup_restore'),
+    path('backups/<int:pk>/download/', BackupDownloadView.as_view(), name='backup_download'),
+    path('backups/<int:pk>/delete/', BackupDeleteView.as_view(), name='backup_delete'),
 
     # ========================================
     # الإشعارات

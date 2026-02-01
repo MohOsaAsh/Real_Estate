@@ -202,6 +202,17 @@
             </li>
             {% endif %}
 
+            <!-- النسخ الاحتياطي -->
+            {% if user.is_superuser %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'backup' in request.resolver_match.url_name %}active{% endif %}"
+                   href="{% url 'rent:backup_list' %}">
+                    <i class="fas fa-database me-2"></i>
+                    <span>النسخ الاحتياطي</span>
+                </a>
+            </li>
+            {% endif %}
+
             <!-- إدارة المستخدمين -->
             {% if user.is_superuser %}
             <li class="nav-item">

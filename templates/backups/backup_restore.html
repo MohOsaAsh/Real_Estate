@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}استعادة نسخة احتياطية{% endblock %}
+{% block page_title %}استعادة البيانات{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'rent:backup_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-right me-1"></i> العودة للنسخ الاحتياطية
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- تحذير -->
+        <div class="alert alert-danger d-flex align-items-start mb-4">
+            <i class="fas fa-exclamation-triangle fa-2x me-3 mt-1"></i>
+            <div>
+                <h6 class="alert-heading mb-1">تحذير مهم!</h6>
+                <p class="mb-0">
+                    استعادة النسخة الاحتياطية قد تستبدل البيانات الحالية في النظام.
+                    تأكد من أخذ نسخة احتياطية من البيانات الحالية قبل المتابعة.
+                </p>
+            </div>
+        </div>
+
+        <!-- رفع ملف -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>
+                    استعادة من ملف خارجي
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'rent:backup_restore' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="backup_file" class="form-label">اختر ملف النسخة الاحتياطية</label>
+                        <input type="file" class="form-control" id="backup_file" name="backup_file"
+                               accept=".json,.sql" required>
+                        <div class="form-text">
+                            الصيغ المدعومة:
+                            <span class="badge bg-primary">JSON</span> ناتج عن dumpdata
+                            <span class="badge bg-success">SQL</span> ناتج عن pg_dump
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-warning"
+                            onclick="return confirm('تحذير: سيتم استبدال البيانات الحالية. هل أنت متأكد من المتابعة؟')">
+                        <i class="fas fa-undo me-1"></i> استعادة البيانات
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

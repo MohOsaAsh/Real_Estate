@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}النسخ الاحتياطي{% endblock %}
+{% block page_title %}إدارة النسخ الاحتياطي{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex gap-2 flex-wrap">
+    <form method="post" action="{% url 'rent:backup_create' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" onclick="return confirm('هل تريد إنشاء نسخة احتياطية JSON؟')">
+            <i class="fas fa-file-code me-1"></i> نسخة JSON
+        </button>
+    </form>
+    {% if pg_dump_available %}
+    <form method="post" action="{% url 'rent:backup_create_sql' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success" onclick="return confirm('هل تريد إنشاء نسخة احتياطية SQL؟')">
+            <i class="fas fa-database me-1"></i> نسخة SQL
+        </button>
+    </form>
+    {% endif %}
+    <a href="{% url 'rent:backup_restore' %}" class="btn btn-outline-warning">
+        <i class="fas fa-upload me-1"></i> استعادة من ملف
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- توضيح الفرق -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-primary"><i class="fas fa-file-code me-2"></i>نسخة JSON</h6>
+                <small class="text-muted">
+                    تصدير البيانات بصيغة JSON عبر Django. مناسبة للنقل بين قواعد بيانات مختلفة وبين البيئة المحلية والسيرفر.
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-success"><i class="fas fa-database me-2"></i>نسخة SQL</h6>
+                <small class="text-muted">
+                    نسخة كاملة لقاعدة البيانات PostgreSQL عبر pg_dump. أسرع وأدق، تشمل الفهارس والتسلسلات.
+                    {% if not pg_dump_available %}<br><span class="text-danger">pg_dump غير متوفر على هذا السيرفر.</span>{% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        {% if backups %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الملف</th>
+                        <th>الصيغة</th>
+                        <th>الحجم</th>
+                        <th>الجداول</th>
+                        <th>السجلات</th>
+                        <th>الحالة</th>
+                        <th>التاريخ</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in backups %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if backup.file_name|slice:"-4:" == ".sql" %}
+                                <i class="fas fa-database text-success me-1"></i>
+                            {% else %}
+                                <i class="fas fa-file-code text-primary me-1"></i>
+                            {% endif %}
+                            {{ backup.file_name }}
+                        </td>
+                        <td>
+                            {% if backup.file_name|slice:"-4:" == ".sql" %}
+                                <span class="badge bg-success">SQL</span>
+                            {% else %}
+                                <span class="badge bg-primary">JSON</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ backup.get_file_size_display }}</td>
+                        <td>{{ backup.tables_count }}</td>
+                        <td>{{ backup.records_count }}</td>
+                        <td>
+                            {% if backup.is_successful and backup.status == 'completed' %}
+                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>مكتمل</span>
+                            {% elif backup.status == 'in_progress' %}
+                                <span class="badge bg-warning"><i class="fas fa-spinner fa-spin me-1"></i>قيد التنفيذ</span>
+                            {% elif backup.status == 'failed' %}
+                                <span class="badge bg-danger"><i class="fas fa-times me-1"></i>فشل</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ backup.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ backup.created_at|date:"Y/m/d H:i" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                {% if backup.is_successful %}
+                                <a href="{% url 'rent:backup_download' backup.pk %}"
+                                   class="btn btn-outline-primary" title="تحميل">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <form method="post" action="{% url 'rent:backup_restore' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="backup_id" value="{{ backup.pk }}">
+                                    <button type="submit" class="btn btn-outline-warning" title="استعادة"
+                                            onclick="return confirm('تحذير: سيتم استبدال البيانات الحالية بهذه النسخة. هل أنت متأكد؟')">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                <form method="post" action="{% url 'rent:backup_delete' backup.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger" title="حذف"
+                                            onclick="return confirm('هل تريد حذف هذه النسخة الاحتياطية؟')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mt-3 p-3">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-database fa-3x text-muted mb-3"></i>
+            <p class="text-muted">لا توجد نسخ احتياطية بعد</p>
+            <form method="post" action="{% url 'rent:backup_create' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i> إنشاء أول نسخة احتياطية
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
