@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf-xlib-2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libffi-dev \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -25,4 +26,3 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 8000
 
 CMD ["gunicorn", "rental.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
-
