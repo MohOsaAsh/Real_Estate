@@ -5,14 +5,13 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install system dependencies for psycopg2 and xhtml2pdf
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
     libcairo2 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-xlib-2.0-0 \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
