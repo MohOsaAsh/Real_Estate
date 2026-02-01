@@ -51,7 +51,6 @@ prompt_toolkit==3.0.52
 psycopg2==2.9.11
 psycopg2-binary==2.9.11
 pure_eval==0.2.3
-pycairo==1.29.0
 pycparser==3.0
 Pygments==2.19.2
 pyHanko==0.32.0
