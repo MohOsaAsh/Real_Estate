@@ -205,7 +205,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             logger = logging.getLogger(__name__)
             logger.error(f"Error getting overdue contracts: {e}")
         
-        return overdue_contracts[:5]  # أول 5 فقط
+        return overdue_contracts[:10] # أول 5 فقط
+        
     
     def _calculate_days_overdue(self, contract, overdue_periods):
         """
