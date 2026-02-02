@@ -300,8 +300,8 @@
                         <i class="fas fa-edit"></i> تعديل البيانات
                     </a>
                     {% endif %}
-                    <button class="btn btn-info" onclick="sendWhatsApp('{{ tenant.phone }}')">
-                        <i class="fab fa-whatsapp"></i> إرسال واتساب
+                   <button class="btn btn-info" onclick="sendWhatsApp('{{ tenant.phone }}')">
+                    <i class="fab fa-whatsapp"></i> إرسال واتساب
                     </button>
                 </div>
             </div>
@@ -318,7 +318,17 @@
 <script src="{% static 'js/tenants.js' %}"></script>
 <script>
 function sendWhatsApp(phone) {
-    window.open(`https://wa.me/${phone}`, '_blank');
+    // حذف أي مسافات
+    phone = phone.replace(/\s+/g, '');
+
+    // إذا الرقم يبدأ بـ 0 نحذفه ونضيف 966
+    if (phone.startsWith('0')) {
+        phone = '966' + phone.substring(1);
+    }
+
+    const message = "مرحبًا، أود الاستفسار";
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
 }
 </script>
 {% endblock %}

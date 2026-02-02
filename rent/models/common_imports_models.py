@@ -67,6 +67,8 @@ class UnitType(models.TextChoices):
     WORKSHOP = 'workshop', _('ورشه')
     OFIEC = 'ofiec', _('مكتب')
     STATION = 'station', _('محطة محروقات')
+    ATM = 'atm', _(' صراف الي سيار')
+    HALL = 'hall', _('صاله ')
 
 
 

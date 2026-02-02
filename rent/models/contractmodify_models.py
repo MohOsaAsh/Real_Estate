@@ -167,6 +167,22 @@ class ContractModification(TimeStampedModel, UserTrackingModel):
     # ========================================
     # 4. VAT Fields (قيمة مضافة)
     # ========================================
+    VAT_INPUT_PERCENTAGE = 'percentage'
+    VAT_INPUT_FIXED = 'fixed'
+    VAT_INPUT_TYPE_CHOICES = [
+        (VAT_INPUT_PERCENTAGE, _('نسبة من الإيجار')),
+        (VAT_INPUT_FIXED, _('مبلغ مقطوع')),
+    ]
+
+    vat_input_type = models.CharField(
+        _('طريقة إدخال القيمة المضافة'),
+        max_length=20,
+        choices=VAT_INPUT_TYPE_CHOICES,
+        default=VAT_INPUT_PERCENTAGE,
+        blank=True,
+        help_text=_('اختر طريقة إدخال القيمة المضافة: نسبة أو مبلغ مقطوع')
+    )
+
     vat_percentage = models.DecimalField(
         _('نسبة القيمة المضافة %'),
         max_digits=5,
@@ -177,16 +193,16 @@ class ContractModification(TimeStampedModel, UserTrackingModel):
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text=_('نسبة القيمة المضافة % (افتراضي: 15%)')
     )
-    
+
     vat_amount = models.DecimalField(
         _('مبلغ القيمة المضافة'),
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text=_('مبلغ القيمة المضافة (يُحسب تلقائياً)')
+        help_text=_('مبلغ القيمة المضافة (يُحسب تلقائياً أو يُدخل مباشرة)')
     )
-    
+
     vat_period_number = models.PositiveIntegerField(
         _('رقم فترة القيمة المضافة'),
         null=True,
@@ -376,20 +392,31 @@ class ContractModification(TimeStampedModel, UserTrackingModel):
     
     def _validate_vat(self):
         """التحقق من حقول القيمة المضافة"""
-        if not self.vat_percentage:
-            self.vat_percentage = Decimal('15.00')  # القيمة الافتراضية
-        
         if not self.vat_period_number:
             raise ValidationError({
                 'vat_period_number': _('يجب تحديد رقم الفترة المطلوب تطبيق القيمة المضافة عليها')
             })
-        
-        # حساب مبلغ القيمة المضافة باستخدام الدالة المساعدة
-        if self.contract and self.contract.annual_rent:
-            self.vat_amount = calculate_vat_amount(
-                self.contract.annual_rent,
-                self.vat_percentage
-            )
+
+        # التحقق حسب طريقة الإدخال
+        if self.vat_input_type == self.VAT_INPUT_FIXED:
+            # مبلغ مقطوع - يجب إدخال المبلغ مباشرة
+            if not self.vat_amount or self.vat_amount <= 0:
+                raise ValidationError({
+                    'vat_amount': _('يجب إدخال مبلغ القيمة المضافة')
+                })
+            # مسح النسبة لأنها غير مستخدمة في هذا الوضع
+            self.vat_percentage = None
+        else:
+            # نسبة من الإيجار (الوضع الافتراضي)
+            if not self.vat_percentage:
+                self.vat_percentage = Decimal('15.00')  # القيمة الافتراضية
+
+            # حساب مبلغ القيمة المضافة باستخدام الدالة المساعدة
+            if self.contract and self.contract.annual_rent:
+                self.vat_amount = calculate_vat_amount(
+                    self.contract.annual_rent,
+                    self.vat_percentage
+                )
     
     def _validate_termination(self):
         """التحقق من حقول إنهاء العقد"""

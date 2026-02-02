@@ -16,33 +16,68 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>يرجى تصحيح الأخطاء التالية:</strong>
+                        <ul class="mb-0 mt-2">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
                     <div class="form-section mb-4">
                         <h6 class="section-title"><i class="fas fa-id-card"></i> معلومات أساسية</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">نوع المستأجر *</label>
                                 {{ form.tenant_type }}
+                                {% if form.tenant_type.errors %}
+                                <div class="invalid-feedback d-block">{{ form.tenant_type.errors }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">الاسم الكامل *</label>
                                 {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">رقم الهوية/السجل *</label>
                                 {{ form.id_number }}
+                                {% if form.id_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.id_number.errors }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">رقم الهاتف *</label>
                                 {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <div class="invalid-feedback d-block">{{ form.phone.errors }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">البريد الإلكتروني</label>
                                 {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                                {% endif %}
                             </div>
-                            <div class="col-md-6" id="auth-number-field" style="display:none;">
-                                <label class="form-label">اسم الشركة  </label>
+                            <div class="col-md-6" id="company-name-field" style="display:none;">
+                                <label class="form-label">اسم الشركة *</label>
                                 {{ form.company_name }}
+                                {% if form.company_name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.company_name.errors }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -59,11 +94,17 @@
                             <div class="col-md-6" id="auth-number-field" style="display:none;">
                                 <label class="form-label">رقم الوكالة</label>
                                 {{ form.authorization_number }}
+                                {% if form.authorization_number.errors %}
+                                <div class="invalid-feedback d-block">{{ form.authorization_number.errors }}</div>
+                                {% endif %}
                             </div>
-                            
+
                             <div class="col-md-6" id="auth-date-field" style="display:none;">
                                 <label class="form-label">تاريخ الوكالة</label>
                                 {{ form.authorization_date }}
+                                {% if form.authorization_date.errors %}
+                                <div class="invalid-feedback d-block">{{ form.authorization_date.errors }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -82,19 +123,17 @@
                         </div>
                     </div>
 
-<div class="form-section mb-4">
-    <h6 class="section-title"><i class="fas fa-toggle-on"></i> الحالة</h6>
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="form-check form-switch">
-                {{ form.is_active }}
-                <label class="form-check-label">نشط</label>
-            </div>
-        </div>
-    </div>
-</div>
-
-
+                    <div class="form-section mb-4">
+                        <h6 class="section-title"><i class="fas fa-toggle-on"></i> الحالة</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label">نشط</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'rent:tenant_list' %}" class="btn btn-secondary">
@@ -111,6 +150,34 @@
 </div>
 
 <script>
+// إظهار/إخفاء حقل اسم الشركة حسب نوع المستأجر
+function toggleCompanyName() {
+    var tenantType = document.getElementById('id_tenant_type');
+    var companyField = document.getElementById('company-name-field');
+    var nameField = document.getElementById('id_name');
+
+    if (tenantType && companyField) {
+        if (tenantType.value === 'company') {
+            companyField.style.display = 'block';
+            // نسخ الاسم إلى اسم الشركة إذا كان فارغاً
+            var companyNameInput = document.getElementById('id_company_name');
+            if (companyNameInput && !companyNameInput.value && nameField && nameField.value) {
+                companyNameInput.value = nameField.value;
+            }
+        } else {
+            companyField.style.display = 'none';
+        }
+    }
+}
+
+var tenantTypeSelect = document.getElementById('id_tenant_type');
+if (tenantTypeSelect) {
+    tenantTypeSelect.addEventListener('change', toggleCompanyName);
+    // تفعيل عند التحميل
+    toggleCompanyName();
+}
+
+// إظهار/إخفاء حقول الوكالة
 $('#id_has_authorization').change(function() {
     if($(this).is(':checked')) {
         $('#auth-number-field, #auth-date-field').show();

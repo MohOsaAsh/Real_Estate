@@ -522,13 +522,16 @@ class DiscountForm(BaseContractModificationForm):
 
 class VATForm(BaseContractModificationForm):
     """Form for VAT"""
-    
+
     class Meta(BaseContractModificationForm.Meta):
         fields = BaseContractModificationForm.Meta.fields + [
-            'vat_percentage', 'vat_amount', 'vat_period_number'
+            'vat_input_type', 'vat_percentage', 'vat_amount', 'vat_period_number'
         ]
         widgets = {
             **BaseContractModificationForm.Meta.widgets,
+            'vat_input_type': forms.RadioSelect(attrs={
+                'class': 'form-check-input',
+            }),
             'vat_percentage': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
@@ -538,7 +541,7 @@ class VATForm(BaseContractModificationForm):
             'vat_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
-                #'readonly': 'readonly'
+                'placeholder': 'مبلغ القيمة المضافة'
             }),
             'vat_period_number': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -547,30 +550,33 @@ class VATForm(BaseContractModificationForm):
                 'required': True
             }),
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['modification_type'].initial = ModificationType.VAT
         self.fields['modification_type'].widget = forms.HiddenInput()
-        
+
         self.fields['vat_amount'].required = False
+        self.fields['vat_percentage'].required = False
         self.fields['vat_percentage'].initial = Decimal('15.00')
-        
+        self.fields['vat_input_type'].initial = 'percentage'
+
+        self.fields['vat_input_type'].label = 'طريقة إدخال القيمة المضافة'
         self.fields['vat_percentage'].label = 'نسبة القيمة المضافة %'
         self.fields['vat_amount'].label = 'مبلغ القيمة المضافة'
         self.fields['vat_period_number'].label = 'رقم الفترة'
-        
+
         # جعل رقم الفترة وتاريخ السريان للقراءة فقط - يتم اختيارهم من الأزرار
         self.fields['vat_period_number'].widget.attrs['readonly'] = 'readonly'
         self.fields['vat_period_number'].help_text = 'سيتم تحديده تلقائياً عند اختيار الفترة'
-        
+
         self.fields['effective_date'].widget = forms.TextInput(attrs={
             'class': 'form-control',
             'readonly': 'readonly',
             'placeholder': 'اختر من الأزرار أدناه'
         })
         self.fields['effective_date'].help_text = 'اختر الفترة المراد تطبيق الضريبة عليها من الأزرار أدناه'
-        
+
         # عرض فترات الاستحقاق للمساعدة (في حالة إعادة التحميل مع وجود عقد)
         contract = None
         if 'contract' in self.data:
@@ -581,7 +587,7 @@ class VATForm(BaseContractModificationForm):
                 pass
         elif self.instance and self.instance.contract_id:
             contract = self.instance.contract
-        
+
         if contract:
             try:
                 due_dates = calculate_contract_due_dates(contract)
@@ -589,68 +595,89 @@ class VATForm(BaseContractModificationForm):
                     self.fields['effective_date'].widget.attrs['title'] = 'اختر من فترات الاستحقاق المتاحة'
             except Exception as e:
                 logger.warning(f'Could not calculate due dates for VAT: {str(e)}')
-    
+
     def clean_vat_percentage(self):
         """التحقق من نسبة القيمة المضافة"""
         percentage = self.cleaned_data.get('vat_percentage')
-        
+        vat_input_type = self.data.get('vat_input_type', 'percentage')
+
+        # في وضع المبلغ المقطوع، النسبة ليست مطلوبة
+        if vat_input_type == 'fixed':
+            return percentage
+
         if not percentage:
             percentage = Decimal('15.00')
-        
+
         if percentage < 0 or percentage > 100:
             raise ValidationError(_('نسبة القيمة المضافة يجب أن تكون بين 0 و 100'))
-        
+
         return percentage
-    
+
+    def clean_vat_amount(self):
+        """التحقق من مبلغ القيمة المضافة"""
+        vat_amount = self.cleaned_data.get('vat_amount')
+        vat_input_type = self.data.get('vat_input_type', 'percentage')
+
+        # في وضع المبلغ المقطوع، المبلغ مطلوب
+        if vat_input_type == 'fixed':
+            if not vat_amount or vat_amount <= 0:
+                raise ValidationError(_('يجب إدخال مبلغ القيمة المضافة'))
+
+        return vat_amount
+
     def clean_vat_period_number(self):
         """التحقق من رقم الفترة"""
         period = self.cleaned_data.get('vat_period_number')
-        
+
         if not period or period < 1:
             raise ValidationError(_('يجب تحديد رقم الفترة'))
-        
+
         return period
-    
+
     def clean(self):
         """حساب مبلغ القيمة المضافة وتاريخ السريان"""
         cleaned_data = super().clean()
         contract = cleaned_data.get('contract')
+        vat_input_type = cleaned_data.get('vat_input_type', 'percentage')
         percentage = cleaned_data.get('vat_percentage') or Decimal('15.00')
         vat_period_number = cleaned_data.get('vat_period_number')
-        
+
         # حساب تاريخ السريان من رقم الفترة
         if contract and vat_period_number:
             try:
                 due_dates = calculate_contract_due_dates(contract)
-                
+
                 if not due_dates:
                     raise ValidationError({'vat_period_number': _('لا يمكن حساب فترات الاستحقاق للعقد')})
-                
+
                 if vat_period_number < 1 or vat_period_number > len(due_dates):
                     raise ValidationError({
                         'vat_period_number': _(f'رقم الفترة يجب أن يكون بين 1 و {len(due_dates)}')
                     })
-                
+
                 # حساب التاريخ من رقم الفترة (الفترة 1 = Index 0)
                 cleaned_data['effective_date'] = due_dates[vat_period_number - 1]
-                
+
             except ValidationError:
                 raise
             except Exception as e:
                 logger.error(f'Error calculating effective date from period: {str(e)}')
                 raise ValidationError({'vat_period_number': _('خطأ في حساب تاريخ السريان من رقم الفترة')})
-        
-        # حساب مبلغ القيمة المضافة
-        if contract and contract.annual_rent:
-            try:
-                # استخدام الدالة المشتركة
-                vat_amount = calculate_vat_amount(contract.annual_rent, percentage)
-                cleaned_data['vat_amount'] = vat_amount
-            
-            except Exception as e:
-                logger.error(f'Error calculating VAT amount: {str(e)}')
-                raise ValidationError(_('خطأ في حساب مبلغ القيمة المضافة'))
-        
+
+        # حساب مبلغ القيمة المضافة حسب طريقة الإدخال
+        if vat_input_type == 'fixed':
+            # مبلغ مقطوع - المبلغ مُدخل مباشرة، مسح النسبة
+            cleaned_data['vat_percentage'] = None
+        else:
+            # نسبة من الإيجار - حساب المبلغ تلقائياً
+            if contract and contract.annual_rent:
+                try:
+                    vat_amount = calculate_vat_amount(contract.annual_rent, percentage)
+                    cleaned_data['vat_amount'] = vat_amount
+                except Exception as e:
+                    logger.error(f'Error calculating VAT amount: {str(e)}')
+                    raise ValidationError(_('خطأ في حساب مبلغ القيمة المضافة'))
+
         return cleaned_data
 
 

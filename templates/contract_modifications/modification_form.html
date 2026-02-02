@@ -122,7 +122,7 @@
                             </h6>
 
                             {% for field in form %}
-                            {% if field.name not in 'contract,modification_type,effective_date,description,notes' %}
+                            {% if field.name not in 'contract,modification_type,effective_date,description,notes,vat_input_type,vat_percentage,vat_amount' %}
                             <div class="mb-3 {% if field.field.widget.is_hidden %}d-none{% endif %}">
                                 <label for="{{ field.id_for_label }}"
                                     class="form-label {% if field.field.required %}required-field{% endif %}">
@@ -135,6 +135,41 @@
                             </div>
                             {% endif %}
                             {% endfor %}
+
+                            {% if modification_type == 'vat' %}
+                            <!-- VAT Input Type Toggle -->
+                            <div class="mb-3">
+                                <label class="form-label required-field">طريقة إدخال القيمة المضافة</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="vat_input_type" id="vat_type_percentage" value="percentage" {% if not form.vat_input_type.value or form.vat_input_type.value == 'percentage' %}checked{% endif %}>
+                                        <label class="form-check-label" for="vat_type_percentage">
+                                            <i class="fas fa-percent"></i> نسبة من الإيجار
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="vat_input_type" id="vat_type_fixed" value="fixed" {% if form.vat_input_type.value == 'fixed' %}checked{% endif %}>
+                                        <label class="form-check-label" for="vat_type_fixed">
+                                            <i class="fas fa-money-bill-wave"></i> مبلغ مقطوع
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Percentage Field -->
+                            <div class="mb-3" id="vat-percentage-field">
+                                <label for="id_vat_percentage" class="form-label">نسبة القيمة المضافة %</label>
+                                {{ form.vat_percentage }}
+                                <div class="help-text">نسبة القيمة المضافة % (افتراضي: 15%)</div>
+                            </div>
+
+                            <!-- Amount Field -->
+                            <div class="mb-3" id="vat-amount-field">
+                                <label for="id_vat_amount" class="form-label">مبلغ القيمة المضافة</label>
+                                {{ form.vat_amount }}
+                                <div class="help-text" id="vat-amount-help">مبلغ القيمة المضافة (يُحسب تلقائياً)</div>
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Description & Notes -->
@@ -291,6 +326,74 @@
                     changePercentageField.value = percentage.toFixed(2);
                 }
             }
+        });
+    }
+
+    // ========================================
+    // VAT Input Type Toggle
+    // ========================================
+    if (modificationType === 'vat') {
+        const vatPercentageField = document.getElementById('vat-percentage-field');
+        const vatAmountField = document.getElementById('vat-amount-field');
+        const vatAmountInput = document.getElementById('id_vat_amount');
+        const vatPercentageInput = document.getElementById('id_vat_percentage');
+        const vatAmountHelp = document.getElementById('vat-amount-help');
+        const vatTypeRadios = document.querySelectorAll('input[name="vat_input_type"]');
+
+        function updateVatFieldsVisibility() {
+            const selectedType = document.querySelector('input[name="vat_input_type"]:checked');
+            if (!selectedType) return;
+
+            if (selectedType.value === 'fixed') {
+                // مبلغ مقطوع
+                if (vatPercentageField) vatPercentageField.style.display = 'none';
+                if (vatAmountField) vatAmountField.style.display = 'block';
+                if (vatAmountInput) {
+                    vatAmountInput.removeAttribute('readonly');
+                    vatAmountInput.placeholder = 'أدخل مبلغ القيمة المضافة';
+                }
+                if (vatAmountHelp) vatAmountHelp.textContent = 'أدخل مبلغ القيمة المضافة مباشرة';
+            } else {
+                // نسبة من الإيجار
+                if (vatPercentageField) vatPercentageField.style.display = 'block';
+                if (vatAmountField) vatAmountField.style.display = 'block';
+                if (vatAmountInput) {
+                    vatAmountInput.setAttribute('readonly', 'readonly');
+                    vatAmountInput.placeholder = 'يُحسب تلقائياً';
+                }
+                if (vatAmountHelp) vatAmountHelp.textContent = 'مبلغ القيمة المضافة (يُحسب تلقائياً)';
+                // إعادة حساب المبلغ
+                calculateVatAmount();
+            }
+        }
+
+        function calculateVatAmount() {
+            const selectedType = document.querySelector('input[name="vat_input_type"]:checked');
+            if (!selectedType || selectedType.value !== 'percentage') return;
+
+            const contractId = contractSelect.value;
+            if (contractId && contractsData[contractId] && vatPercentageInput && vatAmountInput) {
+                const rentAmount = parseFloat(contractsData[contractId].rent_amount) || 0;
+                const percentage = parseFloat(vatPercentageInput.value) || 15;
+                const vatAmount = (rentAmount * percentage) / 100;
+                vatAmountInput.value = vatAmount.toFixed(2);
+            }
+        }
+
+        vatTypeRadios.forEach(radio => {
+            radio.addEventListener('change', updateVatFieldsVisibility);
+        });
+
+        if (vatPercentageInput) {
+            vatPercentageInput.addEventListener('input', calculateVatAmount);
+        }
+
+        // تفعيل عند التحميل
+        updateVatFieldsVisibility();
+
+        // إعادة الحساب عند تغيير العقد
+        contractSelect.addEventListener('change', function() {
+            setTimeout(calculateVatAmount, 100);
         });
     }
 

@@ -96,6 +96,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 const start = new Date(startDate);
                 const end = new Date(start);
                 end.setMonth(end.getMonth() + duration);
+                // طرح يوم واحد ليكون تاريخ النهاية = تاريخ البداية + المدة - 1 يوم
+                end.setDate(end.getDate() - 1);
 
                 // تنسيق التاريخ بصيغة YYYY-MM-DD
                 const year = end.getFullYear();
