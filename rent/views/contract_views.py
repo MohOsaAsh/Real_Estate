@@ -149,8 +149,15 @@ class ContractUpdateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin
 
     def form_valid(self, form):
         try:
+            # حفظ البيانات القديمة قبل التحديث
+            old_data = {field: getattr(self.object, field) for field in form.changed_data}
+
             response = super().form_valid(form)
-            self.log_action('update', self.object)
+
+            # حفظ البيانات الجديدة بعد التحديث
+            new_data = {field: getattr(self.object, field) for field in form.changed_data}
+
+            self.log_action('update', self.object, old_data=old_data, new_data=new_data)
             messages.success(self.request, 'تم تحديث بيانات العقد بنجاح')
             return response
         except ValidationError as e:

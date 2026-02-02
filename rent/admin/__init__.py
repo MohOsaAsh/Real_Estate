@@ -22,10 +22,10 @@ from .tenant_admin import (
 )
 
 # استيراد العقود
-# from .contract_admin import (
-#     ContractAdmin,
-#     ContractModificationAdmin,
-# )
+from .contract_admin import (
+    ContractAdmin,
+    ContractModificationAdmin,
+)
 
 # استيراد المدفوعات
 from .payment_admin import (
@@ -92,8 +92,8 @@ __all__ = [
     'TenantDocumentAdmin',
     
     # Contracts
-    # 'ContractAdmin',
-    # 'ContractModificationAdmin',
+    'ContractAdmin',
+    'ContractModificationAdmin',
     
     # Payments
     'ReceiptAdmin',
