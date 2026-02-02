@@ -58,8 +58,8 @@ class ContractAdmin(BaseModelAdmin):
     
     list_display = (
         'contract_number', 'tenant_link', 'units_display',
-        'start_date', 'end_date', 'status', 
-        'total_amount', 'total_paid', 'remaining'
+        'start_date', 'end_date', 'status',
+        'annual_rent_display', 'total_paid', 'remaining'
     )
     
     list_filter = (
@@ -72,7 +72,7 @@ class ContractAdmin(BaseModelAdmin):
         'units__unit_number'
     )
     
-    readonly_fields = ('contract_number', 'total_paid_amount', 'end_date', 'payment_day')
+    readonly_fields = ('contract_number', 'end_date', 'payment_day')
     
     # ✅ UPDATED: استخدام filter_horizontal للوحدات
     filter_horizontal = ('units',)
@@ -99,7 +99,7 @@ class ContractAdmin(BaseModelAdmin):
             )
         }),
         ('المدفوعات', {
-            'fields': ('total_paid_amount',),
+            'fields': (),
             'classes': ('collapse',)
         }),
         NOTES_FIELDSET,
@@ -113,36 +113,49 @@ class ContractAdmin(BaseModelAdmin):
         """رابط المستأجر"""
         return create_model_link('tenant', obj.tenant.id, obj.tenant.name)
     tenant_link.short_description = 'المستأجر'
-    
+
     def units_display(self, obj):
-        """✅ عرض الوحدات"""
+        """عرض الوحدات"""
         if not obj.pk:
             return '-'
-        
+
         units = obj.units.all()
         count = units.count()
-        
+
         if count == 0:
-            return '⚠️ لا توجد وحدات'
+            return 'لا توجد وحدات'
         elif count == 1:
             unit = units.first()
-            return f'📍 {unit.unit_number}'
+            return f'{unit.unit_number}'
         else:
             units_list = ', '.join([u.unit_number for u in units[:3]])
             if count > 3:
                 units_list += f' ... (+{count-3})'
-            return f'📍 {units_list} ({count} وحدة)'
+            return f'{units_list} ({count} وحدة)'
     units_display.short_description = 'الوحدات'
-    
+
+    def annual_rent_display(self, obj):
+        """الإيجار السنوي"""
+        return format_currency(obj.annual_rent) if obj.annual_rent else '-'
+    annual_rent_display.short_description = 'الإيجار السنوي'
+
     def total_paid(self, obj):
         """المبلغ المدفوع"""
-        return format_currency(obj.total_paid_amount)
+        from django.db.models import Sum
+        paid = obj.receipts.filter(
+            status='posted', is_deleted=False
+        ).aggregate(total=Sum('amount'))['total']
+        return format_currency(paid or 0)
     total_paid.short_description = 'المدفوع'
-    
+
     def remaining(self, obj):
         """المبلغ المتبقي"""
-        remaining = obj.get_remaining_amount()
-        return format_currency(remaining)
+        from django.db.models import Sum
+        annual = obj.annual_rent or 0
+        paid = obj.receipts.filter(
+            status='posted', is_deleted=False
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        return format_currency(annual - paid)
     remaining.short_description = 'المتبقي'
     
     def formfield_for_manytomany(self, db_field, request, **kwargs):
