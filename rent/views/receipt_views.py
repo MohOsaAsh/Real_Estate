@@ -129,6 +129,12 @@ class ReceiptCreateView(LoginRequiredMixin, PermissionCheckMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # ✅ إرسال قائمة العقود النشطة للـ dropdown
+        context['contracts_list'] = Contract.objects.filter(
+            status='active',
+            is_deleted=False
+        ).select_related('tenant').order_by('contract_number')
+
         # إذا كان GET يحتوي على بيانات معاينة
         if self.request.method == 'GET' and 'contract' in self.request.GET:
             # بناء الفورم مع بيانات GET للحفاظ على القيم

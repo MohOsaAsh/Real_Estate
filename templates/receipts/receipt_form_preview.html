@@ -3,6 +3,16 @@
 
 {% block title %}إنشاء سند قبض جديد{% endblock %}
 
+{% block extra_css %}
+<!-- Tom Select for searchable dropdown -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper { direction: rtl; }
+    .ts-dropdown { direction: rtl; text-align: right; }
+    .ts-control { text-align: right; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     
@@ -58,12 +68,21 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">{{ form.contract.label }} <span class="text-danger">*</span></label>
-                        {{ form.contract }}
+                        <label class="form-label">العقد <span class="text-danger">*</span></label>
+                        <select id="contract-select" name="contract" class="form-select" required>
+                            <option value="">-- اختر العقد --</option>
+                            {% for contract in contracts_list %}
+                            <option value="{{ contract.id }}"
+                                    data-tenant="{{ contract.tenant.name }}"
+                                    data-rent="{{ contract.annual_rent }}"
+                                    {% if form.contract.value|stringformat:"s" == contract.id|stringformat:"s" %}selected{% endif %}>
+                                {{ contract.contract_number }} - {{ contract.tenant.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
                         {% if form.contract.errors %}
                             <div class="invalid-feedback d-block">{{ form.contract.errors.0 }}</div>
                         {% endif %}
-                        <small class="form-text text-muted">{{ form.contract.help_text }}</small>
                     </div>
                     
                     <div class="col-md-6 mb-3">
@@ -367,18 +386,36 @@
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    .table-success tbody tr:hover {
-        background-color: rgba(25, 135, 84, 0.15);
-    }
-    .card-header h5 {
-        margin-bottom: 0;
-    }
-    .invalid-feedback {
-        display: block;
-    }
-</style>
+{% block extra_js %}
+<!-- Tom Select -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة Tom Select للعقود
+        const contractSelect = document.getElementById('contract-select');
+        if (contractSelect) {
+            new TomSelect(contractSelect, {
+                placeholder: 'اختر أو ابحث عن عقد...',
+                allowEmptyOption: true,
+                create: false,
+                sortField: { field: 'text', direction: 'asc' },
+                render: {
+                    option: function(data, escape) {
+                        const tenant = data.$option?.dataset?.tenant || '';
+                        const rent = data.$option?.dataset?.rent || '';
+                        return `<div class="py-2">
+                            <div class="fw-bold">${escape(data.text)}</div>
+                            ${rent ? `<small class="text-muted">الإيجار: ${escape(rent)} ريال</small>` : ''}
+                        </div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div>${escape(data.text)}</div>`;
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
 
 

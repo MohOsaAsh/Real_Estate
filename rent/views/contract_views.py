@@ -105,6 +105,12 @@ class ContractCreateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin
     success_url = reverse_lazy('rent:contract_list')
     required_permission = 'rent.add_contract'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # إرسال قائمة المستأجرين للقائمة المنسدلة
+        context['tenants_list'] = Tenant.objects.filter(is_active=True).order_by('name')
+        return context
+
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         try:
@@ -146,6 +152,12 @@ class ContractUpdateView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin
     template_name = 'contracts/contract_form.html'
     success_url = reverse_lazy('rent:contract_list')
     required_permission = 'rent.change_contract'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # إرسال قائمة المستأجرين للقائمة المنسدلة
+        context['tenants_list'] = Tenant.objects.filter(is_active=True).order_by('name')
+        return context
 
     def form_valid(self, form):
         try:
@@ -234,3 +246,50 @@ def contract_statement_view(request, contract_id):
     statement = service.generate_statement()
     
     return render(request, 'contracts/statement.html', {'statement': statement})
+
+
+# ========================================
+# Contract Search View (HTMX)
+# ========================================
+
+from django.views import View
+
+class ContractSearchView(LoginRequiredMixin, View):
+    """بحث عن العقود (HTMX)"""
+    def get(self, request):
+        search = request.GET.get('search', '').strip()
+        contracts = []
+
+        if len(search) >= 1:
+            query = Q()
+
+            # البحث في رقم العقد
+            if search.isdigit():
+                query = Q(contract_number__icontains=search)
+            else:
+                # البحث في اسم المستأجر والهاتف
+                query = (
+                    Q(tenant__name__icontains=search) |
+                    Q(tenant__phone__icontains=search)
+                )
+
+                # البحث بالكلمات المتعددة في الاسم
+                words = search.split()
+                if len(words) > 1:
+                    name_query = Q()
+                    for word in words:
+                        if word:
+                            name_query &= Q(tenant__name__icontains=word)
+                    query = query | name_query
+
+            contracts = Contract.objects.select_related('tenant').only(
+                'id', 'contract_number', 'status', 'annual_rent',
+                'start_date', 'end_date',
+                'tenant__id', 'tenant__name', 'tenant__phone'
+            ).filter(
+                query,
+                status='active',
+                is_deleted=False
+            ).order_by('-start_date')[:15]
+
+        return render(request, 'contracts/partials/search_results.html', {'contracts': contracts})

@@ -316,22 +316,41 @@ class Tenant(TimeStampedModel, UserTrackingModel, SoftDeleteModel):
         """
         Calculate total outstanding balance across all active contracts
         حساب إجمالي الرصيد المستحق عبر جميع العقود النشطة
-        
+
         Returns:
             Decimal: Total outstanding amount
         """
-        # ملاحظة: يحتاج استيراد ContractCalculator
-        # سيتم تنفيذه لاحقاً بعد إنشاء نموذج Contract
         total = Decimal('0')
-        
+
         try:
-            from .contractcalculator import ContractCalculator
+            from rent.services.contract_financial_service import ContractFinancialService
             for contract in self.get_active_contracts():
-                service = ContractFinancialService(contract)
-                total += service.get_outstanding_amount()
+                try:
+                    service = ContractFinancialService(contract)
+                    outstanding = service.get_outstanding_amount()
+                    if outstanding:
+                        total += outstanding
+                except Exception:
+                    # في حالة فشل حساب عقد معين، نستمر مع البقية
+                    pass
         except ImportError:
-            pass
-        
+            # fallback: حساب مباشر من المدفوعات والمستحقات
+            try:
+                from django.db.models import Sum
+                for contract in self.get_active_contracts():
+                    # إجمالي المستحق = الإيجار السنوي
+                    annual_rent = contract.annual_rent or Decimal('0')
+                    # إجمالي المدفوع
+                    paid = contract.receipts.filter(
+                        status='posted',
+                        is_deleted=False
+                    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+                    outstanding = annual_rent - paid
+                    if outstanding > 0:
+                        total += outstanding
+            except Exception:
+                pass
+
         return total
     
     def has_outstanding_payments(self):

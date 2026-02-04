@@ -7,6 +7,13 @@
 
 {% block extra_css %}
 <link href="{% static 'css/contracts.css' %}" rel="stylesheet">
+<!-- Tom Select for searchable dropdown -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper { direction: rtl; }
+    .ts-dropdown { direction: rtl; text-align: right; }
+    .ts-control { text-align: right; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -56,15 +63,29 @@
 
                             <!-- المستأجر -->
                             <div class="col-md-6">
-                                <label for="{{ form.tenant.id_for_label }}" class="form-label">
+                                <label for="tenant-select" class="form-label">
                                     المستأجر <span class="text-danger">*</span>
                                 </label>
-                                {{ form.tenant }}
+
+                                <select id="tenant-select" name="tenant" class="form-select" required>
+                                    <option value="">-- اختر المستأجر --</option>
+                                    {% for tenant in tenants_list %}
+                                    <option value="{{ tenant.id }}"
+                                            data-phone="{{ tenant.phone }}"
+                                            data-id-number="{{ tenant.id_number }}"
+                                            data-type="{{ tenant.get_tenant_type_display }}"
+                                            {% if form.tenant.value|stringformat:"s" == tenant.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ tenant.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+
                                 {% if form.tenant.errors %}
                                 <div class="invalid-feedback d-block">{{ form.tenant.errors }}</div>
                                 {% endif %}
                                 <div class="mt-2">
-                                    <a href="{% url 'rent:tenant_create' %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <a href="{% url 'rent:tenant_create' %}" class="btn btn-sm btn-outline-primary"
+                                        target="_blank">
                                         <i class="fas fa-plus"></i> إضافة مستأجر جديد
                                     </a>
                                 </div>
@@ -293,4 +314,62 @@
 
 {% block extra_js %}
 <script src="{% static 'js/contracts.js' %}"></script>
+<!-- Tom Select -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تهيئة Tom Select للقائمة المنسدلة
+        const tenantSelect = document.getElementById('tenant-select');
+        if (tenantSelect) {
+            new TomSelect(tenantSelect, {
+                placeholder: 'اختر أو ابحث عن مستأجر...',
+                allowEmptyOption: true,
+                create: false,
+                sortField: { field: 'text', direction: 'asc' },
+                onChange: function(value) {
+                    updateTenantInfo(value);
+                },
+                render: {
+                    option: function(data, escape) {
+                        const phone = data.$option?.dataset?.phone || '';
+                        const idNumber = data.$option?.dataset?.idNumber || '';
+                        const type = data.$option?.dataset?.type || '';
+                        return `<div class="py-2">
+                            <div class="fw-bold">${escape(data.text)}</div>
+                            ${phone ? `<small class="text-muted"><i class="fas fa-phone me-1"></i>${escape(phone)} | <i class="fas fa-id-card me-1"></i>${escape(idNumber)}</small>` : ''}
+                        </div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div>${escape(data.text)}</div>`;
+                    }
+                }
+            });
+        }
+    });
+
+    function updateTenantInfo(tenantId) {
+        const tenantInfo = document.getElementById('tenant-info');
+        if (!tenantId) {
+            tenantInfo.innerHTML = '<small>اختر المستأجر لعرض المعلومات</small>';
+            return;
+        }
+
+        const option = document.querySelector(`#tenant-select option[value="${tenantId}"]`);
+        if (option) {
+            const name = option.text;
+            const phone = option.dataset.phone || '-';
+            const idNumber = option.dataset.idNumber || '-';
+            const type = option.dataset.type || '-';
+
+            tenantInfo.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6"><strong>الاسم:</strong> ${name}</div>
+                    <div class="col-md-6"><strong>النوع:</strong> ${type}</div>
+                    <div class="col-md-6"><strong>الجوال:</strong> ${phone}</div>
+                    <div class="col-md-6"><strong>رقم الهوية:</strong> ${idNumber}</div>
+                </div>
+            `;
+        }
+    }
+</script>
 {% endblock %}

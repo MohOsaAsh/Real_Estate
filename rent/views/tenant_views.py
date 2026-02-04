@@ -1,4 +1,8 @@
 from .common_imports_view import *
+from django.views import View
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
+
 
 # ========================================
 # 5. إدارة المستأجرين
@@ -11,23 +15,37 @@ class TenantListView(LoginRequiredMixin, PermissionCheckMixin, ListView):
     context_object_name = 'tenants'
     paginate_by = 20
     required_permission = 'rent.view_tenant'
-    
+
     def get_queryset(self):
+        from django.db.models import Count
+
         queryset = Tenant.objects.filter(is_active=True)
-        
-        search = self.request.GET.get('search')
-        if search:
-            queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(phone__icontains=search) |
-                Q(id_number__icontains=search)
+
+        # البحث بالاسم فقط - يبدأ من حرفين
+        search = self.request.GET.get('search', '').strip()
+        if search and len(search) >= 2:
+            queryset = queryset.filter(name__icontains=search)
+
+        # حساب عدد العقود النشطة
+        queryset = queryset.annotate(
+            active_contracts_count=Count(
+                'contracts',
+                filter=Q(contracts__status='active', contracts__is_deleted=False)
             )
-        
-        tenant_type = self.request.GET.get('type')
-        if tenant_type:
-            queryset = queryset.filter(tenant_type=tenant_type)
-        
+        )
+
         return queryset.order_by('name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # ✅ حساب الرصيد المستحق الدقيق لكل مستأجر
+        # يشمل: الفترات المستحقة فقط + التعديلات (زيادة/تخفيض/خصم/ضريبة)
+        tenants = context.get('tenants', [])
+        for tenant in tenants:
+            tenant.outstanding_balance = tenant.get_outstanding_balance()
+
+        return context
 
 
 class TenantDetailView(LoginRequiredMixin, PermissionCheckMixin, DetailView):
@@ -115,5 +133,49 @@ class TenantDeleteView(LoginRequiredMixin, PermissionCheckMixin, AuditLogMixin, 
         self.log_action('delete', self.object)
         messages.success(self.request, 'تم حذف المستأجر بنجاح')
         return redirect(self.success_url)
+
+from django.db.models import Q
+import re
+
+@method_decorator(never_cache, name='dispatch')
+class TenantSearchView(LoginRequiredMixin, View):
+    """بحث فوري عن المستأجرين بالاسم"""
+
+    def get(self, request):
+        search = request.GET.get('search', '').strip()
+        tenants = []
+
+        # البحث يبدأ بعد حرفين
+        if len(search) >= 2:
+            # البحث بـ "يحتوي على" للاسم - أكثر مرونة
+            tenants = Tenant.objects.only(
+                'id', 'name', 'phone', 'id_number', 'tenant_type'
+            ).filter(
+                name__icontains=search,
+                is_active=True
+            ).order_by('name')[:15]
+
+        return render(
+            request,
+            'tenants/partials/search_results.html',
+            {'tenants': tenants}
+        )
+
+
+
+class TenantContractsView(LoginRequiredMixin, View):
+    """جلب عقود المستأجر (HTMX)"""
+    def get(self, request):
+        tenant_id = request.GET.get('tenant_id')
+        contracts = []
+        if tenant_id:
+            # We need to import Contract inside or use string reference if possible, 
+            # but usually models are imported. 
+            # Assuming Tenant has backwards relation 'contracts'
+            # But better to use the Tenant object to get contracts
+            tenant = get_object_or_404(Tenant, pk=tenant_id)
+            contracts = tenant.get_active_contracts()
+        
+        return render(request, 'contracts/partials/contract_options.html', {'contracts': contracts})
 
 

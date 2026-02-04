@@ -1,91 +1,85 @@
-{% extends 'base.html' %}
+{% extends 'authentication/auth_base.html' %}
 
-{% block title %}تسجيل الدخول{% endblock %}
+{% block title %}تسجيل الدخول - نظام إدارة العقارات{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="mb-0">
-                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-                </h3>
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-building logo-icon"></i>
+        <h3>
+            <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+        </h3>
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div class="mb-3">
+                <label for="{{ form.username.id_for_label }}" class="form-label">
+                    <i class="fas fa-user"></i> اسم المستخدم
+                </label>
+                <input type="text" name="username" id="id_username" class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                    placeholder="أدخل اسم المستخدم" value="{{ form.username.value|default:'' }}" autofocus>
+                {% if form.username.errors %}
+                <div class="invalid-feedback">{{ form.username.errors.0 }}</div>
+                {% endif %}
             </div>
-            <div class="card-body p-4">
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    
-                    <!-- Username -->
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">
-                            <i class="fas fa-user"></i> اسم المستخدم
-                        </label>
-                        {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ form.username.errors.0 }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Password -->
-                    <div class="mb-3">
-                        <label for="{{ form.password.id_for_label }}" class="form-label">
-                            <i class="fas fa-lock"></i> كلمة المرور
-                        </label>
-                        {{ form.password }}
-                        {% if form.password.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ form.password.errors.0 }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Remember Me -->
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="rememberMe" name="remember">
-                        <label class="form-check-label" for="rememberMe">
-                            تذكرني
-                        </label>
-                    </div>
-                    
-                    <!-- Non-field errors -->
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-                    
-                    <!-- Submit Button -->
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-sign-in-alt"></i> دخول
-                        </button>
-                    </div>
-                </form>
-                
-                <!-- Registration Link -->
-                <hr class="my-4">
-                <div class="text-center">
-                    <p class="mb-0">
-                        ليس لديك حساب؟ 
-                        <a href="{% url 'auth_app:register' %}" class="text-decoration-none">
-                            <i class="fas fa-user-plus"></i> إنشاء حساب جديد
-                        </a>
-                    </p>
-                </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label for="{{ form.password.id_for_label }}" class="form-label">
+                    <i class="fas fa-lock"></i> كلمة المرور
+                </label>
+                <input type="password" name="password" id="id_password" class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+                    placeholder="أدخل كلمة المرور">
+                {% if form.password.errors %}
+                <div class="invalid-feedback">{{ form.password.errors.0 }}</div>
+                {% endif %}
             </div>
+
+            <!-- Remember Me -->
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="rememberMe" name="remember">
+                <label class="form-check-label" for="rememberMe">تذكرني</label>
+            </div>
+
+            <!-- Non-field errors -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ form.non_field_errors.0 }}
+            </div>
+            {% endif %}
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> دخول
+                </button>
+            </div>
+        </form>
+
+        <!-- Registration Link -->
+        <hr class="my-4">
+        <div class="text-center">
+            <p class="mb-0 text-muted">
+                ليس لديك حساب؟
+                <a href="{% url 'auth_app:register' %}" class="text-decoration-none fw-bold">
+                    <i class="fas fa-user-plus"></i> إنشاء حساب جديد
+                </a>
+            </p>
         </div>
-        
-        <!-- Info Box -->
-        <div class="card mt-3">
-            <div class="card-body text-center">
-                <p class="mb-0 text-muted">
-                    <i class="fas fa-shield-alt"></i> 
-                    نظام مصادقة آمن ومحمي
-                </p>
-            </div>
-        </div>
+    </div>
+</div>
+
+<!-- Info Box -->
+<div class="card info-card mt-3">
+    <div class="card-body text-center">
+        <p class="mb-0">
+            <i class="fas fa-shield-alt"></i>
+            نظام مصادقة آمن ومحمي
+        </p>
     </div>
 </div>
 {% endblock %}

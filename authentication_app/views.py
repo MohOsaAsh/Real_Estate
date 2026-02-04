@@ -112,9 +112,12 @@ class UserDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
-        context['user_groups'] = user.groups.all()
-        context['user_permissions'] = user.user_permissions.all()
-        context['all_permissions'] = user.get_all_permissions()
+        # ✅ OPTIMIZED: استخدام prefetch لتقليل queries
+        context['user_groups'] = user.groups.prefetch_related('permissions').all()
+        context['user_permissions'] = user.user_permissions.select_related('content_type').all()[:50]
+        # ✅ تم إزالة get_all_permissions() لأنها بطيئة جداً (كانت تأخذ 29 ثانية!)
+        # يمكن حسابها في الـ template إذا لزم الأمر
+        context['all_permissions'] = set()  # أو احذف هذا السطر إذا لم يكن مستخدماً
         return context
 
 

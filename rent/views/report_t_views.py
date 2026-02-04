@@ -60,6 +60,16 @@ def get_contracts_queryset(filters=None):
     return queryset
 
 
+def safe_float(val):
+    """تحويل آمن إلى float"""
+    if val is None:
+        return 0.0
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def apply_outstanding_filter(report_data, has_outstanding_filter):
     """
     فلترة حسب وجود مستحقات
@@ -281,7 +291,7 @@ def export_tenants_report_excel(request):
         ws.cell(row=row_num, column=3).border = thin_border
 
         # الإيجار السنوي
-        ws.cell(row=row_num, column=4).value = float(item['annual_rent'])
+        ws.cell(row=row_num, column=4).value = safe_float(item['annual_rent'])
         ws.cell(row=row_num, column=4).number_format = '#,##0.00'
         ws.cell(row=row_num, column=4).border = thin_border
 
@@ -296,7 +306,7 @@ def export_tenants_report_excel(request):
         ws.cell(row=row_num, column=6).border = thin_border
 
         # المستحق
-        ws.cell(row=row_num, column=7).value = float(item['outstanding_amount'])
+        ws.cell(row=row_num, column=7).value = safe_float(item['outstanding_amount'])
         ws.cell(row=row_num, column=7).number_format = '#,##0.00'
         ws.cell(row=row_num, column=7).border = thin_border
 
@@ -341,7 +351,7 @@ def export_tenants_report_excel(request):
     )
 
     # إجمالي الإيجار السنوي
-    ws.cell(row=row_num, column=4).value = float(total_annual_rent)
+    ws.cell(row=row_num, column=4).value = safe_float(total_annual_rent)
     ws.cell(row=row_num, column=4).number_format = '#,##0.00'
     ws.cell(row=row_num, column=4).font = Font(bold=True, size=12)
     ws.cell(row=row_num, column=4).fill = PatternFill(
@@ -359,7 +369,7 @@ def export_tenants_report_excel(request):
         )
 
     # إجمالي المستحق
-    ws.cell(row=row_num, column=7).value = float(total_outstanding)
+    ws.cell(row=row_num, column=7).value = safe_float(total_outstanding)
     ws.cell(row=row_num, column=7).number_format = '#,##0.00'
     ws.cell(row=row_num, column=7).font = Font(bold=True, size=12, color="FF0000")
     ws.cell(row=row_num, column=7).fill = PatternFill(

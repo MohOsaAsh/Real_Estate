@@ -7,60 +7,78 @@
             <i class="fas fa-building me-2"></i>
             <span>نظام إدارة العقارات</span>
         </a>
-        
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+
+        <!-- أيقونات الإشعارات والمستخدم - تظهر دائماً -->
+        <div class="d-flex align-items-center order-lg-last">
+            <!-- Notifications - دائماً ظاهر -->
+            {% if user.is_authenticated %}
+            <div class="nav-item dropdown me-2">
+                <a class="nav-link position-relative p-2" href="#" id="notificationDropdown"
+                    role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell fa-lg text-white"></i>
+                    <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
+                        id="notification-count" style="font-size: 0.6rem;">0</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
+                    aria-labelledby="notificationDropdown">
+                    <li>
+                        <h6 class="dropdown-header">الإشعارات</h6>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item text-center text-muted" href="#">لا توجد إشعارات جديدة</a></li>
+                </ul>
+            </div>
+
+            <!-- User Menu - دائماً ظاهر -->
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center p-2" href="#" id="userDropdown"
+                    role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle fa-lg text-white"></i>
+                    <span class="d-none d-md-inline ms-2 text-white">{{ user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li class="dropdown-header d-md-none">
+                        <strong>{{ user.username }}</strong>
+                    </li>
+                    <li class="d-md-none"><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'auth_app:user-detail' user.pk %}">
+                            <i class="fas fa-user-cog me-2"></i>
+                            الملف الشخصي
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'auth_app:user-update' user.pk %}">
+                            <i class="fas fa-cog me-2"></i>
+                            الإعدادات
+                        </a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <form method="post" action="{% url 'auth_app:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                تسجيل الخروج
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto align-items-center">
-                <!-- Notifications -->
-                <li class="nav-item dropdown me-3">
-                    <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill" id="notification-count" style="display: none;">0</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown">
-                        <li><h6 class="dropdown-header">الإشعارات</h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-center text-muted" href="#">لا توجد إشعارات جديدة</a></li>
-                    </ul>
-                </li>
-                
-                <!-- User Menu -->
-                {% if user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-2"></i>
-                        <span>{{ user.username }}</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li>
-                            <a class="dropdown-item" href="{% url 'auth_app:user-detail' user.pk %}">
-                                <i class="fas fa-user-cog me-2"></i>
-                                الملف الشخصي
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'auth_app:user-update' user.pk %}">
-                                <i class="fas fa-cog me-2"></i>
-                                الإعدادات
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                             <form method="post" action="{% url 'auth_app:logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="dropdown-item text-danger">
-            <i class="fas fa-sign-out-alt me-2"></i>
-            تسجيل الخروج
-        </button>
-    </form>
-                        </li>
-                    </ul>
-                </li>
-                {% endif %}
-            </ul>
+            <!-- يمكن إضافة روابط إضافية هنا إذا لزم الأمر -->
         </div>
     </div>
 </nav>

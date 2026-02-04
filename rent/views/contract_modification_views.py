@@ -246,7 +246,13 @@ class ModificationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
         context = super().get_context_data(**kwargs)
         context['title'] = self.get_title()
         context['modification_type'] = self.get_modification_type()
-        
+
+        # ✅ إرسال قائمة العقود للـ dropdown (Tom Select)
+        context['contracts_list'] = Contract.objects.filter(
+            status__in=['draft', 'active'],
+            is_deleted=False
+        ).select_related('tenant').order_by('contract_number')
+
         # تمرير بيانات جميع العقود للـ JavaScript
         try:
             contracts_data = {}
@@ -433,7 +439,13 @@ class ModificationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         context['is_edit'] = True
         context['title'] = f'تعديل {self.object.get_modification_type_display()}'
         context['modification_type'] = self.object.modification_type
-        
+
+        # ✅ إرسال قائمة العقود للـ dropdown (Tom Select)
+        context['contracts_list'] = Contract.objects.filter(
+            status__in=['draft', 'active'],
+            is_deleted=False
+        ).select_related('tenant').order_by('contract_number')
+
         # إضافة بيانات العقود
         try:
             contracts_data = {}

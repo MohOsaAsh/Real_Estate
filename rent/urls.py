@@ -79,6 +79,8 @@ urlpatterns = [
     path('tenants/<int:pk>/', views.TenantDetailView.as_view(), name='tenant_detail'),
     path('tenants/<int:pk>/update/', views.TenantUpdateView.as_view(), name='tenant_update'),
     path('tenants/<int:pk>/delete/', views.TenantDeleteView.as_view(), name='tenant_delete'),
+    path('tenants/search/', views.TenantSearchView.as_view(), name='tenant_search'),
+    path('tenants/contracts/', views.TenantContractsView.as_view(), name='tenant_contracts_options'),
     
     # ========================================
     # إدارة العقود
@@ -89,7 +91,8 @@ urlpatterns = [
     path('contracts/<int:pk>/update/', views.ContractUpdateView.as_view(), name='contract_update'),
     path('contracts/<int:pk>/activate/', views.ContractActivateView.as_view(), name='contract_activate'),
     path('contracts/<int:pk>/terminate/', views.ContractTerminateView.as_view(), name='contract_terminate'),
-        
+    path('contracts/search/', views.ContractSearchView.as_view(), name='contract_search'),
+
     # ========================================
     # إدارة الدفعات - Receipt Management
     # ========================================

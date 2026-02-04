@@ -105,27 +105,66 @@
 }
 
 /* Mobile */
-@media (max-width: 768px) {
+@media (max-width: 991px) {
     #mainNavbar {
-        height: 56px;
-        padding: 0 1rem;
+        height: auto;
+        min-height: 56px;
+        padding: 0.5rem 1rem;
     }
-    
+
     #mainNavbar .navbar-brand {
         font-size: 1rem;
     }
-    
+
     #mainNavbar .navbar-brand span {
         display: none;
     }
-    
+
     #mainNavbar .nav-link {
-        padding: 0.75rem 1rem;
+        padding: 0.5rem;
     }
-    
+
     #mainNavbar .navbar-collapse {
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+        padding: 0.75rem 1rem;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        max-height: calc(100vh - 56px);
+        overflow-y: auto;
+    }
+
+    /* قائمة الإشعارات على الموبايل */
+    #mainNavbar .notification-dropdown {
+        min-width: 280px;
+        position: absolute !important;
+        right: 0;
+        left: auto;
+    }
+
+    /* قائمة المستخدم على الموبايل */
+    #mainNavbar #userDropdown + .dropdown-menu {
+        min-width: 200px;
+        position: absolute !important;
+        right: 0;
+        left: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    #mainNavbar .navbar-brand i {
+        font-size: 1.25rem;
+    }
+
+    #mainNavbar .notification-dropdown {
+        min-width: 260px;
+        right: -50px;
+    }
+
+    #mainNavbar #userDropdown + .dropdown-menu {
+        min-width: 180px;
     }
 }

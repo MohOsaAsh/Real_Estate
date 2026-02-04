@@ -5,7 +5,13 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css\contract_modifications\modification_form.css'  %}">
-
+<!-- Tom Select for searchable dropdown -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper { direction: rtl; }
+    .ts-dropdown { direction: rtl; text-align: right; }
+    .ts-control { text-align: right; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -61,13 +67,25 @@
                                 <i class="fas fa-file-contract text-primary"></i>
                                 اختيار العقد
                             </h6>
+
+                            <!-- Contract Dropdown (Tom Select) -->
                             <div class="mb-3">
-                                <label for="{{ form.contract.id_for_label }}" class="form-label required-field">
-                                    العقد
-                                </label>
-                                {{ form.contract }}
-                                {% if form.contract.help_text %}
-                                <div class="help-text">{{ form.contract.help_text }}</div>
+                                <label class="form-label required-field">العقد</label>
+                                <select id="contract-select" name="contract" class="form-select" required>
+                                    <option value="">-- اختر العقد --</option>
+                                    {% for contract in contracts_list %}
+                                    <option value="{{ contract.id }}"
+                                            data-tenant="{{ contract.tenant.name }}"
+                                            data-rent="{{ contract.annual_rent }}"
+                                            data-start="{{ contract.start_date|date:'Y-m-d' }}"
+                                            data-end="{{ contract.end_date|date:'Y-m-d' }}"
+                                            {% if form.contract.value|stringformat:"s" == contract.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ contract.contract_number }} - {{ contract.tenant.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.contract.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.contract.errors.0 }}</div>
                                 {% endif %}
                             </div>
 
@@ -207,6 +225,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
     // بيانات العقود من السيرفر
     const contractsData = {{ contracts_data| safe }};
@@ -214,11 +233,36 @@
     const isRentChange = ['rent_increase', 'rent_decrease'].includes(modificationType);
 
     // عناصر الـ Form
-    const contractSelect = document.getElementById('{{ form.contract.id_for_label }}');
+    const contractSelect = document.getElementById('contract-select');
     const contractInfo = document.getElementById('contractInfo');
     const effectiveDateInput = document.getElementById('{{ form.effective_date.id_for_label }}');
     const dueDatesContainer = document.getElementById('dueDatesContainer');
     const dueDateButtons = document.getElementById('dueDateButtons');
+
+    // ✅ تهيئة Tom Select للعقود
+    document.addEventListener('DOMContentLoaded', function() {
+        if (contractSelect) {
+            new TomSelect(contractSelect, {
+                placeholder: 'اختر أو ابحث عن عقد...',
+                allowEmptyOption: true,
+                create: false,
+                sortField: { field: 'text', direction: 'asc' },
+                render: {
+                    option: function(data, escape) {
+                        const tenant = data.$option?.dataset?.tenant || '';
+                        const rent = data.$option?.dataset?.rent || '';
+                        return `<div class="py-2">
+                            <div class="fw-bold">${escape(data.text)}</div>
+                            ${rent ? `<small class="text-muted">الإيجار: ${escape(rent)} ريال</small>` : ''}
+                        </div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div>${escape(data.text)}</div>`;
+                    }
+                }
+            });
+        }
+    });
 
     // حقول زيادة/تخفيض الإيجار
     const oldRentField = document.getElementById('id_old_rent_amount');
@@ -397,11 +441,9 @@
         });
     }
 
-    // تفعيل عند التحميل
-    window.addEventListener('DOMContentLoaded', function () {
-        if (contractSelect.value) {
-            contractSelect.dispatchEvent(new Event('change'));
-        }
-    });
+    // تفعيل عند التحميل إذا كان هناك قيمة مختارة
+    if (contractSelect && contractSelect.value) {
+        contractSelect.dispatchEvent(new Event('change'));
+    }
 </script>
 {% endblock %}

@@ -46,7 +46,7 @@ window.ReportsModule = {
     },
 
     /**
-     * تصدير إلى Excel
+     * تصدير إلى Excel باستخدام SheetJS
      */
     exportToExcel(tableId, filename = 'report') {
         const table = document.getElementById(tableId);
@@ -55,19 +55,48 @@ window.ReportsModule = {
             this.showAlert('لم يتم العثور على الجدول', 'danger');
             return;
         }
-        
-        const html = table.outerHTML;
-        const url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
-        const link = document.createElement('a');
-        
-        link.href = url;
-        link.download = filename + '.xls';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        this.showAlert('✅ تم تصدير التقرير بنجاح', 'success');
+
+        // التحقق من وجود مكتبة XLSX
+        if (typeof XLSX === 'undefined') {
+            console.warn('XLSX library not loaded, using fallback method');
+            // استخدام الطريقة القديمة كبديل
+            const html = table.outerHTML;
+            const url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename + '.xls';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            this.showAlert('✅ تم تصدير التقرير بنجاح', 'success');
+            return;
+        }
+
+        try {
+            // إنشاء workbook من الجدول
+            const wb = XLSX.utils.table_to_book(table, {
+                sheet: 'التقرير',
+                raw: true
+            });
+
+            // ضبط اتجاه RTL للعربية
+            const ws = wb.Sheets['التقرير'];
+            if (!ws['!cols']) ws['!cols'] = [];
+
+            // تعديل عرض الأعمدة
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let i = 0; i <= range.e.c; i++) {
+                ws['!cols'][i] = { wch: 20 }; // عرض 20 حرف
+            }
+
+            // تصدير الملف
+            XLSX.writeFile(wb, filename + '.xlsx');
+
+            this.showAlert('✅ تم تصدير التقرير بنجاح', 'success');
+        } catch (error) {
+            console.error('Excel export error:', error);
+            this.showAlert('❌ خطأ في تصدير الملف: ' + error.message, 'danger');
+        }
     },
 
     /**

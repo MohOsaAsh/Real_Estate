@@ -121,108 +121,135 @@ class ActiveContractsReportView(LoginRequiredMixin, PermissionCheckMixin, Templa
 
 
 class OccupancyReportView(LoginRequiredMixin, PermissionCheckMixin, TemplateView):
-    """تقرير معدل الإشغال"""
+    """تقرير معدل الإشغال - محسّن"""
     template_name = 'reports/occupancy.html'
     required_permission = 'rent.view_reports'
-    
+
     def get_context_data(self, **kwargs):
+        from django.db.models import Count, Q, Case, When, IntegerField
+
         context = super().get_context_data(**kwargs)
-        
-        # إحصائيات عامة
-        total_units = Unit.objects.filter(is_active=True).count()
-        rented_units = Unit.objects.filter(status='rented', is_active=True).count()
-        available_units = Unit.objects.filter(status='available', is_active=True).count()
-        maintenance_units = Unit.objects.filter(status='maintenance', is_active=True).count()
-        frozen_units = Unit.objects.filter(status='frozen', is_active=True).count()
-        
+
+        # ✅ OPTIMIZED: إحصائيات عامة في query واحد
+        unit_stats = Unit.objects.filter(is_active=True).aggregate(
+            total=Count('id'),
+            rented=Count('id', filter=Q(status='rented')),
+            available=Count('id', filter=Q(status='available')),
+            maintenance=Count('id', filter=Q(status='maintenance')),
+            frozen=Count('id', filter=Q(status='frozen'))
+        )
+
+        total_units = unit_stats['total'] or 0
+        rented_units = unit_stats['rented'] or 0
+        available_units = unit_stats['available'] or 0
+        maintenance_units = unit_stats['maintenance'] or 0
+        frozen_units = unit_stats['frozen'] or 0
+
         context['total_units'] = total_units
         context['rented_units'] = rented_units
         context['available_units'] = available_units
         context['maintenance_units'] = maintenance_units
         context['frozen_units'] = frozen_units
         context['occupancy_rate'] = (rented_units / total_units * 100) if total_units > 0 else 0
-        
-        # إحصائيات حسب المبنى
-        buildings = Building.objects.filter(is_active=True)
-        building_stats = []
-        
-        for building in buildings:
-            total = building.units.filter(is_active=True).count()
-            rented = building.units.filter(status='rented', is_active=True).count()
-            available = building.units.filter(status='available', is_active=True).count()
+
+        # ✅ OPTIMIZED: إحصائيات المباني في query واحد باستخدام annotate
+        building_stats = Building.objects.filter(is_active=True).annotate(
+            total=Count('units', filter=Q(units__is_active=True)),
+            rented=Count('units', filter=Q(units__status='rented', units__is_active=True)),
+            available=Count('units', filter=Q(units__status='available', units__is_active=True))
+        ).values('id', 'name', 'total', 'rented', 'available')
+
+        # تحويل النتائج لقائمة مع حساب rate
+        building_stats_list = []
+        for stat in building_stats:
+            total = stat['total'] or 0
+            rented = stat['rented'] or 0
             rate = (rented / total * 100) if total > 0 else 0
-            
-            building_stats.append({
-                'building': building,
-                'building_name': building.name,
+            building_stats_list.append({
+                'building_name': stat['name'],
                 'total': total,
                 'rented': rented,
-                'available': available,
-                'rate': rate
+                'available': stat['available'] or 0,
+                'rate': round(rate, 1)
             })
-        
-        context['building_stats'] = building_stats
-        
+
+        context['building_stats'] = building_stats_list
+
         # بيانات للرسم البياني
         context['chart_data'] = {
             'labels': ['مؤجرة', 'متاحة', 'صيانة', 'مجمدة'],
             'values': [rented_units, available_units, maintenance_units, frozen_units]
         }
-        
+
         return context
 
 
 class RevenueReportView(LoginRequiredMixin, PermissionCheckMixin, TemplateView):
-    """تقرير الإيرادات"""
+    """تقرير الإيرادات - محسّن"""
     template_name = 'reports/revenue.html'
     required_permission = 'rent.view_reports'
-    
+
     def get_context_data(self, **kwargs):
+        from django.db.models.functions import TruncMonth
+        from django.db.models import Count
+
         context = super().get_context_data(**kwargs)
         today = date.today()
-        
+
         # الفترة (افتراضياً آخر 12 شهر)
         months = int(self.request.GET.get('months', 12))
         start_date = today - timedelta(days=30 * months)
-        
-        # إجمالي الإيرادات
-        total_revenue = Receipt.objects.filter(
+        month_start_current = today.replace(day=1)
+
+        # ✅ OPTIMIZED: جلب كل الإحصائيات في query واحد
+        base_qs = Receipt.objects.filter(
             status='posted',
             receipt_date__gte=start_date
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
-        # الإيرادات الشهرية
+        )
+
+        # إجمالي الإيرادات + عدد السندات في query واحد
+        totals = base_qs.aggregate(
+            total_revenue=Sum('amount'),
+            total_receipts=Count('id')
+        )
+        total_revenue = totals['total_revenue'] or Decimal('0')
+        total_receipts = totals['total_receipts'] or 0
+
+        # ✅ OPTIMIZED: الإيرادات الشهرية في query واحد باستخدام TruncMonth
+        monthly_data = base_qs.annotate(
+            month=TruncMonth('receipt_date')
+        ).values('month').annotate(
+            total=Sum('amount')
+        ).order_by('month')
+
+        # تحويل النتائج لقوائم
+        monthly_dict = {item['month']: item['total'] for item in monthly_data}
+
         monthly_revenue = []
         monthly_labels = []
         monthly_values = []
-        
-        for i in range(months):
-            month_start = today - timedelta(days=30 * (months - i))
-            month_end = month_start + timedelta(days=30)
-            
-            month_total = Receipt.objects.filter(
-                status='posted',
-                receipt_date__gte=month_start,
-                receipt_date__lt=month_end
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-            
-            month_label = month_start.strftime('%Y-%m')
+
+        # إنشاء قائمة بكل الشهور (حتى الفارغة)
+        from dateutil.relativedelta import relativedelta
+        current_month = start_date.replace(day=1)
+        while current_month <= today:
+            month_label = current_month.strftime('%Y-%m')
+            month_total = monthly_dict.get(current_month, Decimal('0'))
+
             monthly_labels.append(month_label)
-            monthly_values.append(float(month_total))
-            
+            monthly_values.append(float(month_total or 0))
             monthly_revenue.append({
                 'month': month_label,
-                'total': month_total
+                'total': month_total or Decimal('0')
             })
-        
-        # الإيرادات حسب طريقة الدفع
-        payment_methods = Receipt.objects.filter(
-            status='posted',
-            receipt_date__gte=start_date
-        ).values('payment_method').annotate(
+
+            current_month = current_month + relativedelta(months=1)
+
+        # ✅ OPTIMIZED: الإيرادات حسب طريقة الدفع (query موجود بالفعل - جيد)
+        payment_methods = base_qs.values('payment_method').annotate(
             total=Sum('amount')
         ).order_by('-total')
-        
+
         payment_methods_data = []
         for method in payment_methods:
             payment_methods_data.append({
@@ -230,26 +257,19 @@ class RevenueReportView(LoginRequiredMixin, PermissionCheckMixin, TemplateView):
                 'method_code': method['payment_method'],
                 'total': method['total']
             })
-        
-        # الإيرادات اليوم
-        today_revenue = Receipt.objects.filter(
+
+        # ✅ OPTIMIZED: الإيرادات اليوم والشهر الحالي في query واحد
+        today_and_month = Receipt.objects.filter(
             status='posted',
-            receipt_date=today
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
-        # الإيرادات الشهر الحالي
-        month_start = today.replace(day=1)
-        month_revenue = Receipt.objects.filter(
-            status='posted',
-            receipt_date__gte=month_start
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
-        # عدد السندات
-        total_receipts = Receipt.objects.filter(
-            status='posted',
-            receipt_date__gte=start_date
-        ).count()
-        
+            receipt_date__gte=month_start_current
+        ).aggregate(
+            month_revenue=Sum('amount'),
+            today_revenue=Sum('amount', filter=Q(receipt_date=today))
+        )
+
+        today_revenue = today_and_month['today_revenue'] or Decimal('0')
+        month_revenue = today_and_month['month_revenue'] or Decimal('0')
+
         context['total_revenue'] = total_revenue
         context['today_revenue'] = today_revenue
         context['month_revenue'] = month_revenue
@@ -258,13 +278,13 @@ class RevenueReportView(LoginRequiredMixin, PermissionCheckMixin, TemplateView):
         context['payment_methods'] = payment_methods_data
         context['months'] = months
         context['start_date'] = start_date
-        
+
         # بيانات للرسم البياني
         context['chart_data'] = {
             'labels': monthly_labels,
             'values': monthly_values
         }
-        
+
         return context
 
 

@@ -2,18 +2,18 @@
 {% load static %}
 
 {% block title %}
-    {% if form.instance.pk %}تعديل سند قبض{% else %}سند قبض جديد{% endif %}
+{% if form.instance.pk %}تعديل سند قبض{% else %}سند قبض جديد{% endif %}
 {% endblock %}
 
 {% block page_title %}
-    <div class="d-flex align-items-center">
-        <i class="fas fa-receipt text-primary me-2"></i>
-        {% if form.instance.pk %}
-            تعديل سند قبض {{ form.instance.receipt_number }}
-        {% else %}
-            سند قبض جديد
-        {% endif %}
-    </div>
+<div class="d-flex align-items-center">
+    <i class="fas fa-receipt text-primary me-2"></i>
+    {% if form.instance.pk %}
+    تعديل سند قبض {{ form.instance.receipt_number }}
+    {% else %}
+    سند قبض جديد
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block content %}
@@ -36,11 +36,49 @@
                             <i class="fas fa-file-contract text-primary"></i> العقد
                         </h6>
                         <div class="row">
-                            <div class="col-12">
-                                <label for="{{ form.contract.id_for_label }}" class="form-label required">
-                                    {{ form.contract.label }}
-                                </label>
-                                {{ form.contract }}
+                            <!-- Contract Search -->
+                            <div class="col-12 mb-3">
+                                <label class="form-label required">البحث عن العقد</label>
+                                <div class="position-relative">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" id="contract-search-input"
+                                            name="search"
+                                            placeholder="ابحث برقم العقد أو اسم المستأجر أو رقم الجوال..."
+                                            hx-get="{% url 'rent:contract_search' %}"
+                                            hx-trigger="keyup changed delay:500ms" hx-target="#contract-search-results"
+                                            autocomplete="off">
+                                    </div>
+                                    <div id="contract-search-results"></div>
+                                </div>
+
+                                <!-- Selected Contract Display -->
+                                <div id="selected-contract-display"
+                                    class="mt-2 p-2 bg-light border rounded {% if not form.contract.value %}d-none{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle avatar-xs me-2 bg-success text-white d-flex align-items-center justify-content-center"
+                                                style="width:30px;height:30px;border-radius:50%">
+                                                <i class="fas fa-file-contract"></i>
+                                            </div>
+                                            <span id="selected-contract-name" class="fw-bold">
+                                                {% if form.instance.contract %}
+                                                {{ form.instance.contract.contract_number }} - {{ form.instance.contract.tenant.name }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle"
+                                            onclick="clearContractSelection()" title="إلغاء الاختيار">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden Contract Field -->
+                                <div class="d-none">
+                                    {{ form.contract }}
+                                </div>
+
                                 {% if form.contract.errors %}
                                 <div class="invalid-feedback d-block">{{ form.contract.errors.0 }}</div>
                                 {% endif %}
@@ -99,17 +137,17 @@
                             <div class="col-md-6" id="checkNumberField" style="display: none;">
                                 <label class="form-label">رقم الشيك</label>
                                 <input type="text" id="check_number" name="check_number" class="form-control"
-                                       placeholder="رقم الشيك" value="{{ form.instance.check_number }}">
+                                    placeholder="رقم الشيك" value="{{ form.instance.check_number }}">
                             </div>
                             <div class="col-md-6" id="checkDateField" style="display: none;">
                                 <label class="form-label">تاريخ الشيك</label>
                                 <input type="date" id="check_date" name="check_date" class="form-control"
-                                       value="{{ form.instance.check_date|date:'Y-m-d' }}">
+                                    value="{{ form.instance.check_date|date:'Y-m-d' }}">
                             </div>
                             <div class="col-md-6" id="bankNameField" style="display: none;">
                                 <label class="form-label">اسم البنك</label>
                                 <input type="text" id="bank_name" name="bank_name" class="form-control"
-                                       placeholder="اسم البنك" value="{{ form.instance.bank_name }}">
+                                    placeholder="اسم البنك" value="{{ form.instance.bank_name }}">
                             </div>
                             <div class="col-md-12" id="paymentProofField" style="display: none;">
                                 <label class="form-label">
@@ -123,7 +161,8 @@
                                 <div class="mt-2">
                                     <small class="text-success">
                                         <i class="fas fa-check-circle"></i>
-                                        يوجد ملف مرفق حالياً: {{ form.instance.payment_proof.name|cut:"receipts/payment_proofs/" }}
+                                        يوجد ملف مرفق حالياً: {{
+                                        form.instance.payment_proof.name|cut:"receipts/payment_proofs/" }}
                                     </small>
                                 </div>
                                 {% endif %}
@@ -172,6 +211,7 @@
         content: " *";
         color: red;
     }
+
     .section-title {
         font-weight: 600;
         color: #333;
@@ -179,6 +219,7 @@
         padding-bottom: 8px;
         margin-bottom: 15px;
     }
+
     .form-section {
         background: #fafafa;
         padding: 15px;
@@ -189,30 +230,53 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const paymentMethod = document.getElementById('id_payment_method');
-    const checkNumberField = document.getElementById('checkNumberField');
-    const checkDateField = document.getElementById('checkDateField');
-    const bankNameField = document.getElementById('bankNameField');
-    const paymentProofField = document.getElementById('paymentProofField');
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentMethod = document.getElementById('id_payment_method');
+        const checkNumberField = document.getElementById('checkNumberField');
+        const checkDateField = document.getElementById('checkDateField');
+        const bankNameField = document.getElementById('bankNameField');
+        const paymentProofField = document.getElementById('paymentProofField');
 
-    function togglePaymentFields() {
-        if (!paymentMethod) return;
-        const method = paymentMethod.value;
-        const isCheck = method === 'check';
-        const isBankTransfer = method === 'bank_transfer';
+        function togglePaymentFields() {
+            if (!paymentMethod) return;
+            const method = paymentMethod.value;
+            const isCheck = method === 'check';
+            const isBankTransfer = method === 'bank_transfer';
 
-        if (checkNumberField) checkNumberField.style.display = isCheck ? 'block' : 'none';
-        if (checkDateField) checkDateField.style.display = isCheck ? 'block' : 'none';
-        if (bankNameField) bankNameField.style.display = (isCheck || isBankTransfer) ? 'block' : 'none';
-        // عرض حقل صورة الإثبات للشيك والتحويل البنكي
-        if (paymentProofField) paymentProofField.style.display = (isCheck || isBankTransfer) ? 'block' : 'none';
+            if (checkNumberField) checkNumberField.style.display = isCheck ? 'block' : 'none';
+            if (checkDateField) checkDateField.style.display = isCheck ? 'block' : 'none';
+            if (bankNameField) bankNameField.style.display = (isCheck || isBankTransfer) ? 'block' : 'none';
+            if (paymentProofField) paymentProofField.style.display = (isCheck || isBankTransfer) ? 'block' : 'none';
+        }
+
+        if (paymentMethod) {
+            paymentMethod.addEventListener('change', togglePaymentFields);
+            togglePaymentFields();
+        }
+    });
+
+    // Contract Selection Functions
+    function selectContract(id, name) {
+        const select = document.getElementById('id_contract');
+        if (select) {
+            select.value = id;
+            select.dispatchEvent(new Event('change'));
+        }
+
+        document.getElementById('selected-contract-name').textContent = name;
+        document.getElementById('selected-contract-display').classList.remove('d-none');
+        document.getElementById('contract-search-results').innerHTML = '';
+        document.getElementById('contract-search-input').value = '';
     }
 
-    if (paymentMethod) {
-        paymentMethod.addEventListener('change', togglePaymentFields);
-        togglePaymentFields();
+    function clearContractSelection() {
+        const select = document.getElementById('id_contract');
+        if (select) {
+            select.value = '';
+            select.dispatchEvent(new Event('change'));
+        }
+        document.getElementById('selected-contract-display').classList.add('d-none');
+        document.getElementById('selected-contract-name').textContent = '';
     }
-});
 </script>
 {% endblock %}
